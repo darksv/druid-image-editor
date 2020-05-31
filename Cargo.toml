@@ -1,0 +1,19 @@
+[package]
+name = "bbe"
+version = "0.1.0"
+authors = ["darksv <darek969-12@o2.pl>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+druid = { git = "https://github.com/xi-editor/druid.git#f2925f466e83726636badd49a540efa2774027dc", features = ["image"] }
+image = "0.23.2"
+piet = "*"
+kurbo = "*"
+
+[profile.release]
+debug = true
+
+[profile.dev.package."*"]
+opt-level = 3
