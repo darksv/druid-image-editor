@@ -62,7 +62,67 @@ impl ImageEditor {
     }
 }
 
-fn interpolate_points(begin: Point, end: Point) -> impl Iterator<Item=Point> {
+mod bresenham {
+    // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#Algorithm_for_integer_arithmetic
+
+    fn plot_line_low(x0: i32, y0: i32, x1: i32, y1: i32, mut f: impl FnMut(i32, i32)) {
+        let dx = x1 - x0;
+        let mut dy = y1 - y0;
+        let mut yi = 1;
+        if dy < 0 {
+            yi = -1;
+            dy = -dy;
+        }
+        let mut d = 2 * dy - dx;
+        let mut y = y0;
+        for x in x0..=x1 {
+            f(x, y);
+            if d > 0 {
+                y += yi;
+                d -= 2 * dx;
+            }
+            d += 2 * dy;
+        }
+    }
+
+    fn plot_line_high(x0: i32, y0: i32, x1: i32, y1: i32, mut f: impl FnMut(i32, i32)) {
+        let mut dx = x1 - x0;
+        let dy = y1 - y0;
+        let mut xi = 1;
+        if dx < 0 {
+            xi = -1;
+            dx = -dx;
+        }
+        let mut d = 2 * dx - dy;
+        let mut x = x0;
+        for y in y0..=y1 {
+            f(x, y);
+            if d > 0 {
+                x += xi;
+                d -= 2 * dy;
+            }
+            d += 2 * dx;
+        }
+    }
+
+    pub(crate) fn plot_line(x0: i32, y0: i32, x1: i32, y1: i32, f: impl FnMut(i32, i32)) {
+        if (y1 - y0).abs() < (x1 - x0).abs() {
+            if x0 > x1 {
+                plot_line_low(x1, y1, x0, y0, f);
+            } else {
+                plot_line_low(x0, y0, x1, y1, f);
+            }
+        } else {
+            if y0 > y1 {
+                plot_line_high(x1, y1, x0, y0, f);
+            } else {
+                plot_line_high(x0, y0, x1, y1, f);
+            }
+        }
+    }
+}
+
+fn interpolate_points(begin: Point, end: Point, mut f: impl FnMut(Point)) {
     let (begin, end) = if begin.x < end.x { (begin, end) } else { (end, begin) };
 
     let x0 = begin.x as i32;
@@ -70,19 +130,7 @@ fn interpolate_points(begin: Point, end: Point) -> impl Iterator<Item=Point> {
     let x1 = end.x as i32;
     let y1 = end.y as i32;
 
-    let mut x = x0;
-
-    iter::from_fn(move || {
-        if x == x1 {
-            return None;
-        }
-
-        x += 1;
-
-        let y = y0 + (y1 - y0) * (x - x0) / (x1 - x0);
-
-        Some(Point::new(x as f64, y as f64))
-    })
+    bresenham::plot_line(x0, y0, x1, y1, |x, y| f(Point::new(x as f64, y as f64)));
 }
 
 fn gaussian(bytes: &[u8], width: usize, height: usize, out: &mut [u8]) {
@@ -122,13 +170,13 @@ impl Widget<AppData> for ImageEditor {
                             let begin = transform * self.previous_mouse_position;
                             let end = transform * self.mouse_position;
 
-                            for p in interpolate_points(begin, end) {
+                            interpolate_points(begin, end, |p| {
                                 BasicBrush::new(self.brush_size).apply(
                                     data.image.pixels[0].as_view_mut(),
                                     p.x as u32,
                                     p.y as u32,
                                 );
-                            }
+                            });
 
                             self.is_contour_dirty = true;
                         }
