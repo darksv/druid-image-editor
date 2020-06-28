@@ -109,7 +109,7 @@ fn gaussian(bytes: &[u8], width: usize, height: usize, out: &mut [u8]) {
 impl Widget<AppData> for ImageEditor {
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut AppData, _env: &Env) {
         match event {
-            Event::MouseMoved(e) => {
+            Event::MouseMove(e) => {
                 self.previous_mouse_position = self.mouse_position;
                 self.mouse_position = e.pos;
 
@@ -219,7 +219,7 @@ impl Widget<AppData> for ImageEditor {
             Event::Wheel(e) => {
                 match (e.mods.ctrl, e.mods.alt, e.mods.shift) {
                     (true, false, false) => {
-                        let new_scale = self.scale * e.delta.y.neg().signum().exp();
+                        let new_scale = self.scale * e.wheel_delta.y.neg().signum().exp();
 
                         // From formula:
                         // (cursor_x - old_offset_x) / old_scale =
@@ -230,10 +230,10 @@ impl Widget<AppData> for ImageEditor {
                         self.scale = new_scale;
                     }
                     (false, false, false) => {
-                        self.offset_y += e.delta.y.neg();
+                        self.offset_y += e.wheel_delta.y.neg();
                     }
                     (false, false, true) => {
-                        self.offset_x += e.delta.y.neg();
+                        self.offset_x += e.wheel_delta.y.neg();
                     }
                     _ => ()
                 }
