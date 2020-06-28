@@ -110,6 +110,8 @@ impl Widget<AppData> for ImageEditor {
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut AppData, _env: &Env) {
         match event {
             Event::MouseMove(e) => {
+                ctx.request_focus();
+
                 self.previous_mouse_position = self.mouse_position;
                 self.mouse_position = e.pos;
 
@@ -147,6 +149,8 @@ impl Widget<AppData> for ImageEditor {
                 ctx.request_paint();
             }
             Event::MouseDown(e) => {
+                ctx.request_focus();
+
                 self.is_mouse_down = true;
 
                 let transform = self.make_transform().inverse();
@@ -205,6 +209,8 @@ impl Widget<AppData> for ImageEditor {
                 }
             }
             Event::MouseUp(_e) => {
+                ctx.request_focus();
+
                 self.is_mouse_down = false;
                 self.state = EditorState::Drawing;
             }
