@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use druid::{AppLauncher, Color, LocalizedString, UnitPoint, widget::{Flex, WidgetExt}, Widget, WindowDesc};
+use druid::{AppLauncher, Color, LocalizedString, UnitPoint, widget::{Flex, WidgetExt}, Widget, WindowDesc, LifeCycle, EventCtx, PaintCtx, LifeCycleCtx, BoxConstraints, Size, LayoutCtx, Event, Env, UpdateCtx, Rect};
 use druid::{Data, Lens};
 use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, Scroll, SizedBox};
-
+use piet::RenderContext;
 use crate::histogram::Histogram;
 use crate::image_buffer::ImageBuffer;
 use crate::image_edit::ImageEditor;
@@ -31,14 +31,32 @@ struct AppData {
     image: ImageBuffer,
 }
 
+struct LayerThumbnail;
+
+impl Widget<Layer> for LayerThumbnail {
+    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut Layer, _env: &Env) {}
+
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &Layer, _env: &Env) {}
+
+    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &Layer, _data: &Layer, _env: &Env) {}
+
+    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &Layer, _env: &Env) -> Size {
+        bc.max()
+    }
+
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &Layer, _env: &Env) {
+        let size = ctx.size();
+        ctx.fill(druid::Rect::from_origin_size(druid::Point::ORIGIN, size), &data.color);
+    }
+}
+
 fn make_layer_item() -> impl Widget<Layer> {
     Flex::row()
         .with_child(
-            SizedBox::empty()
+            SizedBox::new(LayerThumbnail)
                 .width(32.0)
                 .height(32.0)
                 .border(Color::grey8(0), 1.0)
-                .background(Color::rgb(255, 0, 0))
         )
         .with_flex_child(
             Label::new(|item: &Layer, _env: &_| item.name.clone())
