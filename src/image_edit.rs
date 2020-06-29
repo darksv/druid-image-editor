@@ -1,5 +1,4 @@
-use druid::{Affine, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Rect, RenderContext, Size, UpdateCtx, Widget, Point, Cursor};
-use druid::KeyCode;
+use druid::{Affine, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Rect, RenderContext, Size, UpdateCtx, Widget, Point, Cursor, Code};
 use piet::{InterpolationMode, StrokeStyle};
 use std::ops::Neg;
 use kurbo::{Circle, BezPath};
@@ -246,12 +245,12 @@ impl Widget<AppData> for ImageEditor {
 
                 self.is_contour_dirty = true;
 
-                if e.mods.alt {
+                if e.mods.alt() {
                     self.state = EditorState::Moving;
                     self.start_moving_pos = e.pos;
                     self.start_offset_x = self.offset_x;
                     self.start_offset_y = self.offset_y;
-                } else if e.mods.ctrl && e.mods.shift {
+                } else if e.mods.ctrl() && e.mods.shift() {
                     self.state = EditorState::Selecting;
                     self.start_moving_pos = e.pos;
                 }
@@ -264,14 +263,14 @@ impl Widget<AppData> for ImageEditor {
             }
             Event::KeyDown(e) => {
                 dbg!(e);
-                match e.key_code {
-                    KeyCode::LeftBracket => self.brush_size -= 1,
-                    KeyCode::RightBracket => self.brush_size += 1,
+                match e.code {
+                    Code::BracketLeft => self.brush_size -= 1,
+                    Code::BracketRight => self.brush_size += 1,
                     _ => ()
                 }
             }
             Event::Wheel(e) => {
-                match (e.mods.ctrl, e.mods.alt, e.mods.shift) {
+                match (e.mods.ctrl(), e.mods.alt(), e.mods.shift()) {
                     (true, false, false) => {
                         let new_scale = self.scale * e.wheel_delta.y.neg().signum().exp();
 

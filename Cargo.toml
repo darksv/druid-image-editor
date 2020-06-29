@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-druid = { git = "https://github.com/xi-editor/druid.git", rev="0548b7a018236c281f2ab8d33422930d77cf8272", features = ["image"] }
+druid = { git = "https://github.com/linebender/druid.git", rev="e03c8f3243a4e8dd8885d075cef71ad5198cd6c6", features = ["image"] }
 image = "0.23.2"
 piet = "*"
 kurbo = "*"
