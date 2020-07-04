@@ -41,13 +41,23 @@ impl<T> Matrix<T> {
         self.data.as_mut_slice()
     }
 
-    fn view(&self, x: u32, y: u32, width: u32, height: u32) -> View<'_, T> {
+    pub(crate) fn view(&self, x: u32, y: u32, width: u32, height: u32) -> View<'_, T> {
         View {
             buffer: &self.data,
             x,
             y,
             width,
             height,
+        }
+    }
+
+    pub(crate) fn as_view(&self) -> View<'_, T> {
+        View {
+            buffer: &self.data,
+            x: 0,
+            y: 0,
+            width: self.width,
+            height: self.height,
         }
     }
 
@@ -100,6 +110,15 @@ impl<'a, T> View<'a, T> {
     #[inline]
     pub(crate) fn get(&self, x: u32, y: u32) -> T where T: Copy {
         self.buffer[(self.y + y) as usize * self.width as usize + (self.x + x) as usize]
+    }
+
+    #[inline]
+    pub(crate) fn as_slice(&self) -> Option<&'a [T]> {
+        if self.x == 0 && self.y == 0 && self.width * self.height == self.buffer.len() as u32 {
+            Some(self.buffer)
+        } else {
+            None
+        }
     }
 }
 

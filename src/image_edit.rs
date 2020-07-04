@@ -4,7 +4,7 @@ use druid::{Affine, BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCt
 use kurbo::Circle;
 use piet::{InterpolationMode, StrokeStyle};
 
-use crate::AppData;
+use crate::{AppData, ChannelKind};
 use crate::brushes::{BasicBrush, Brush};
 use crate::image_buffer::merge_channels;
 
@@ -171,9 +171,10 @@ impl Widget<AppData> for ImageEditor {
                                 }
 
                                 let image = &mut data.image;
+                                let kind = data.channels[index].kind;
                                 interpolate_points(begin, end, |p| {
                                     BasicBrush::new(self.brush_size).apply(
-                                        image.pixels[index].as_view_mut(),
+                                        image.channel_mut(kind),
                                         p.x as u32,
                                         p.y as u32,
                                     );
@@ -210,7 +211,7 @@ impl Widget<AppData> for ImageEditor {
                     }
 
                     BasicBrush::new(self.brush_size).apply(
-                        data.image.pixels[index].as_view_mut(),
+                        data.image.channel_mut(data.channels[index].kind),
                         p.x as u32,
                         p.y as u32,
                     );
@@ -300,10 +301,10 @@ impl Widget<AppData> for ImageEditor {
         ctx.clip(clip_rect);
 
         {
-            let r = data.image.pixels[0].as_slice();
-            let g = data.image.pixels[1].as_slice();
-            let b = data.image.pixels[2].as_slice();
-            let a = data.image.pixels[3].as_slice();
+            let r = data.image.channel(ChannelKind::Red).as_slice().unwrap();
+            let g = data.image.channel(ChannelKind::Green).as_slice().unwrap();
+            let b = data.image.channel(ChannelKind::Blue).as_slice().unwrap();
+            let a = data.image.channel(ChannelKind::Alpha).as_slice().unwrap();
 
             let rgba = &mut *data.image.interleaved.borrow_mut();
             let zeros = vec![0u8; (data.image.width() * data.image.height()) as usize];

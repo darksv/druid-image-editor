@@ -6,17 +6,18 @@ use std::path::Path;
 use druid::{Affine, Data, PaintCtx, RenderContext, Size};
 use piet::{ImageFormat, InterpolationMode};
 
-use crate::channels::Matrix;
+use crate::ChannelKind;
+use crate::channels::{Matrix, View, ViewMut};
 
 /// Stored Image data.
 #[derive(Clone, Data)]
 pub struct ImageBuffer {
     #[data(ignore)]
-    pub(crate) pixels: [Matrix<u8>; 4],
+    pixels: [Matrix<u8>; 4],
     #[data(ignore)]
-    pub(crate) selection: Matrix<u8>,
+    selection: Matrix<u8>,
     #[data(ignore)]
-    pub(crate) hot_selection: Matrix<u8>,
+    hot_selection: Matrix<u8>,
     #[data(ignore)]
     pub(crate) interleaved: RefCell<Vec<u8>>,
     width: u32,
@@ -26,6 +27,26 @@ pub struct ImageBuffer {
 }
 
 impl ImageBuffer {
+    pub(crate) fn channel(&self, kind: ChannelKind) -> View<'_, u8>{
+        match kind {
+            ChannelKind::Red => self.pixels[0].as_view(),
+            ChannelKind::Green => self.pixels[1].as_view(),
+            ChannelKind::Blue => self.pixels[2].as_view(),
+            ChannelKind::Alpha => self.pixels[3].as_view(),
+            ChannelKind::Selection => self.selection.as_view(),
+        }
+    }
+
+    pub(crate) fn channel_mut(&mut self, kind: ChannelKind) -> ViewMut<'_, u8>{
+        match kind {
+            ChannelKind::Red => self.pixels[0].as_view_mut(),
+            ChannelKind::Green => self.pixels[1].as_view_mut(),
+            ChannelKind::Blue => self.pixels[2].as_view_mut(),
+            ChannelKind::Alpha => self.pixels[3].as_view_mut(),
+            ChannelKind::Selection => self.selection.as_view_mut(),
+        }
+    }
+
     pub(crate) fn width(&self) -> u32 { self.width }
     pub(crate) fn height(&self) -> u32 { self.height }
 }

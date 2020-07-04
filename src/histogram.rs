@@ -1,7 +1,7 @@
 use druid::{BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget};
 use piet::{ImageFormat, InterpolationMode};
 
-use crate::AppData;
+use crate::{AppData, ChannelKind};
 use crate::image_buffer::ImageBuffer;
 
 pub struct Histogram {}
@@ -32,7 +32,7 @@ impl Widget<AppData> for Histogram {
             let mut result = vec![0; width * height * 4];
             let mut hist = [0u32; 256];
 
-            for p in image.pixels[0].as_slice().iter() {
+            for p in image.channel(ChannelKind::Red).as_slice().unwrap().iter() {
                 hist[*p as usize] += 1;
             }
 
