@@ -2,10 +2,9 @@ use druid::{Affine, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, 
 use piet::{InterpolationMode, StrokeStyle};
 use std::ops::Neg;
 use kurbo::{Circle, BezPath};
-use std::iter;
-use crate::AppData;
+use crate::{AppData};
 use crate::brushes::{BasicBrush, Brush};
-use crate::contours::{find_contours, Contour};
+use crate::contours::{Contour, find_contours};
 use crate::image_buffer::merge_channels;
 use crate::layers::View;
 
@@ -169,14 +168,20 @@ impl Widget<AppData> for ImageEditor {
                             let begin = transform * self.previous_mouse_position;
                             let end = transform * self.mouse_position;
 
-                            interpolate_points(begin, end, |p| {
-                                BasicBrush::new(self.brush_size).apply(
-                                    data.image.pixels[0].as_view_mut(),
-                                    p.x as u32,
-                                    p.y as u32,
-                                );
-                            });
+                            for index in 0..4 {
+                                if !data.layers[index].is_selected {
+                                    continue;
+                                }
 
+                                let image = &mut data.image;
+                                interpolate_points(begin, end, |p| {
+                                    BasicBrush::new(self.brush_size).apply(
+                                        image.pixels[index].as_view_mut(),
+                                        p.x as u32,
+                                        p.y as u32,
+                                    );
+                                });
+                            }
                             self.is_contour_dirty = true;
                         }
                         EditorState::Moving => {
@@ -203,12 +208,17 @@ impl Widget<AppData> for ImageEditor {
                 let transform = self.make_transform().inverse();
                 let p = transform * self.mouse_position;
 
-                BasicBrush::new(self.brush_size).apply(
-                    data.image.pixels[0].as_view_mut(),
-                    p.x as u32,
-                    p.y as u32,
-                );
+                for index in 0..4 {
+                    if !data.layers[index].is_selected {
+                        continue;
+                    }
 
+                    BasicBrush::new(self.brush_size).apply(
+                        data.image.pixels[index].as_view_mut(),
+                        p.x as u32,
+                        p.y as u32,
+                    );
+                }
 
                 // let w = data.image.width();
                 // let offset_x = 10;
@@ -330,42 +340,20 @@ impl Widget<AppData> for ImageEditor {
         let clip_rect = Rect::ZERO.with_size(ctx.size());
         ctx.clip(clip_rect);
 
-        match (data.layers[0].is_visible, data.layers[1].is_visible, data.layers[2].is_visible) {
-            (true, false, false) => {
-                merge_channels(
-                    data.image.pixels[0].as_slice(),
-                    data.image.pixels[0].as_slice(),
-                    data.image.pixels[0].as_slice(),
-                    data.image.pixels[3].as_slice(),
-                    &mut *data.image.interleaved.borrow_mut(),
-                );
-            }
-            (false, true, false) => {
-                merge_channels(
-                    data.image.pixels[1].as_slice(),
-                    data.image.pixels[1].as_slice(),
-                    data.image.pixels[1].as_slice(),
-                    data.image.pixels[3].as_slice(),
-                    &mut *data.image.interleaved.borrow_mut(),
-                );
-            }
-            (false, false, true) => {
-                merge_channels(
-                    data.image.pixels[2].as_slice(),
-                    data.image.pixels[2].as_slice(),
-                    data.image.pixels[2].as_slice(),
-                    data.image.pixels[3].as_slice(),
-                    &mut *data.image.interleaved.borrow_mut(),
-                );
-            }
-            _ => {
-                merge_channels(
-                    data.image.pixels[0].as_slice(),
-                    data.image.pixels[1].as_slice(),
-                    data.image.pixels[2].as_slice(),
-                    data.image.pixels[3].as_slice(),
-                    &mut *data.image.interleaved.borrow_mut(),
-                );
+        {
+            let r = data.image.pixels[0].as_slice();
+            let g = data.image.pixels[1].as_slice();
+            let b = data.image.pixels[2].as_slice();
+            let a = data.image.pixels[3].as_slice();
+
+            let rgba = &mut *data.image.interleaved.borrow_mut();
+            let zeros = vec![0u8; (data.image.width() * data.image.height()) as usize];
+            match (data.layers[0].is_visible, data.layers[1].is_visible, data.layers[2].is_visible, data.layers[3].is_visible) {
+                (true, false, false, false) => merge_channels(r, r, r, zeros.as_slice(), rgba),
+                (false, true, false, false) => merge_channels(g, g, g, zeros.as_slice(), rgba),
+                (false, false, true, false) => merge_channels(b, b, b, zeros.as_slice(), rgba),
+                (false, false, false, true) => merge_channels(a, a, a, zeros.as_slice(), rgba),
+                _ => merge_channels(r, g, b, a, rgba),
             }
         }
 

@@ -20,6 +20,8 @@ struct Layer {
     name: String,
     #[lens(name = "is_visible")]
     is_visible: bool,
+    #[lens(name = "is_selected")]
+    is_selected: bool,
     #[lens(name = "color")]
     color: Color,
 }
@@ -46,7 +48,11 @@ impl Widget<Layer> for LayerThumbnail {
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &Layer, _env: &Env) {
         let size = ctx.size();
-        ctx.fill(druid::Rect::from_origin_size(druid::Point::ORIGIN, size), &data.color);
+        let rect = druid::Rect::from_origin_size(druid::Point::ORIGIN, size);
+        ctx.fill(rect, &data.color);
+        if data.is_selected {
+            ctx.stroke(rect, &Color::rgba8(255, 255, 255, 255), 2.0);
+        }
     }
 }
 
@@ -57,6 +63,7 @@ fn make_layer_item() -> impl Widget<Layer> {
                 .width(32.0)
                 .height(32.0)
                 .border(Color::grey8(0), 1.0)
+                .on_click(|ctx, data, _| data.is_selected ^= true)
         )
         .with_flex_child(
             Label::new(|item: &Layer, _env: &_| item.name.clone())
@@ -67,9 +74,7 @@ fn make_layer_item() -> impl Widget<Layer> {
             Checkbox::new(LabelText::Specific(Default::default()))
                 .lens(Layer::is_visible),
             FlexParams::default())
-
         .padding(5.0)
-        .background(Color::rgb(0.5, 0.5, 0.5))
 }
 
 
@@ -101,10 +106,10 @@ fn main() {
     let data = AppData {
         layers: Arc::new(
             vec![
-                Layer { name: "Red".to_string(), is_visible: true, color: Color::rgb8(255, 0, 0) },
-                Layer { name: "Green".to_string(), is_visible: true, color: Color::rgb8(0, 255, 0) },
-                Layer { name: "Blue".to_string(), is_visible: true, color: Color::rgb8(0, 0, 255) },
-                Layer { name: "Alpha".to_string(), is_visible: true, color: Color::rgb8(0, 0, 0) },
+                Layer { name: "Red".to_string(), is_selected: false, is_visible: true, color: Color::rgb8(255, 0, 0) },
+                Layer { name: "Green".to_string(), is_selected: true, is_visible: true, color: Color::rgb8(0, 255, 0) },
+                Layer { name: "Blue".to_string(), is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 255) },
+                Layer { name: "Alpha".to_string(), is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
             ]),
         image: ImageBuffer::from_file("image.jpg").unwrap(),
     };
