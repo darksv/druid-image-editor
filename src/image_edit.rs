@@ -166,7 +166,7 @@ impl Widget<AppData> for ImageEditor {
                             let end = transform * self.mouse_position;
 
                             for index in 0..4 {
-                                if !data.layers[index].is_selected {
+                                if !data.channels[index].is_selected {
                                     continue;
                                 }
 
@@ -205,7 +205,7 @@ impl Widget<AppData> for ImageEditor {
                 let p = transform * self.mouse_position;
 
                 for index in 0..4 {
-                    if !data.layers[index].is_selected {
+                    if !data.channels[index].is_selected {
                         continue;
                     }
 
@@ -307,7 +307,7 @@ impl Widget<AppData> for ImageEditor {
 
             let rgba = &mut *data.image.interleaved.borrow_mut();
             let zeros = vec![0u8; (data.image.width() * data.image.height()) as usize];
-            match (data.layers[0].is_visible, data.layers[1].is_visible, data.layers[2].is_visible, data.layers[3].is_visible) {
+            match (data.channels[0].is_visible, data.channels[1].is_visible, data.channels[2].is_visible, data.channels[3].is_visible) {
                 (true, false, false, false) => merge_channels(r, r, r, zeros.as_slice(), rgba),
                 (false, true, false, false) => merge_channels(g, g, g, zeros.as_slice(), rgba),
                 (false, false, true, false) => merge_channels(b, b, b, zeros.as_slice(), rgba),

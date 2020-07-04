@@ -1,4 +1,4 @@
-use crate::layers::{Matrix, View};
+use crate::channels::{Matrix, View};
 
 #[derive(Debug)]
 pub struct Contour {

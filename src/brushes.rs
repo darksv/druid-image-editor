@@ -1,4 +1,4 @@
-use crate::layers::ViewMut;
+use crate::channels::ViewMut;
 
 pub(crate) struct BasicBrush {
     size: u32,

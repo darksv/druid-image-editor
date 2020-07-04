@@ -14,10 +14,10 @@ mod histogram;
 mod contours;
 mod brushes;
 mod image_buffer;
-mod layers;
+mod channels;
 
 #[derive(Clone, Debug, Data, Lens)]
-struct Layer {
+struct Channel {
     name: String,
     #[lens(name = "is_visible")]
     is_visible: bool,
@@ -29,25 +29,25 @@ struct Layer {
 
 #[derive(Clone, Debug, Data, Lens)]
 struct AppData {
-    #[lens(name = "layers")]
-    layers: Arc<Vec<Layer>>,
+    #[lens(name = "channels")]
+    channels: Arc<Vec<Channel>>,
     image: ImageBuffer,
 }
 
 struct LayerThumbnail;
 
-impl Widget<Layer> for LayerThumbnail {
-    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut Layer, _env: &Env) {}
+impl Widget<Channel> for LayerThumbnail {
+    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut Channel, _env: &Env) {}
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &Layer, _env: &Env) {}
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &Channel, _env: &Env) {}
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &Layer, _data: &Layer, _env: &Env) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &Channel, _data: &Channel, _env: &Env) {}
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &Layer, _env: &Env) -> Size {
+    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &Channel, _env: &Env) -> Size {
         bc.max()
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &Layer, _env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &Channel, _env: &Env) {
         let size = ctx.size();
         let rect = druid::Rect::from_origin_size(druid::Point::ORIGIN, size);
         ctx.fill(rect, &data.color);
@@ -57,7 +57,7 @@ impl Widget<Layer> for LayerThumbnail {
     }
 }
 
-fn make_layer_item() -> impl Widget<Layer> {
+fn make_layer_item() -> impl Widget<Channel> {
     Flex::row()
         .with_child(
             SizedBox::new(LayerThumbnail)
@@ -67,13 +67,13 @@ fn make_layer_item() -> impl Widget<Layer> {
                 .on_click(|_ctx, data, _| data.is_selected ^= true)
         )
         .with_flex_child(
-            Label::new(|item: &Layer, _env: &_| item.name.clone())
+            Label::new(|item: &Channel, _env: &_| item.name.clone())
                 .align_vertical(UnitPoint::LEFT)
                 .expand().height(42.0)
             , 1.0)
         .with_flex_child(
             Checkbox::new(LabelText::Specific(Default::default()))
-                .lens(Layer::is_visible),
+                .lens(Channel::is_visible),
             FlexParams::default())
         .padding(5.0)
 }
@@ -90,7 +90,7 @@ fn main() {
                         .with_flex_child(
                             Scroll::new(List::new(|| make_layer_item()))
                                 .vertical()
-                                .lens(AppData::layers)
+                                .lens(AppData::channels)
                             , 1.0)
                         .with_flex_child(
                             SizedBox::new(Histogram {})
@@ -105,12 +105,12 @@ fn main() {
         .window_size((1378.0, 768.0));
 
     let data = AppData {
-        layers: Arc::new(
+        channels: Arc::new(
             vec![
-                Layer { name: "Red".to_string(), is_selected: false, is_visible: true, color: Color::rgb8(255, 0, 0) },
-                Layer { name: "Green".to_string(), is_selected: true, is_visible: true, color: Color::rgb8(0, 255, 0) },
-                Layer { name: "Blue".to_string(), is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 255) },
-                Layer { name: "Alpha".to_string(), is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
+                Channel { name: "Red".to_string(), is_selected: false, is_visible: true, color: Color::rgb8(255, 0, 0) },
+                Channel { name: "Green".to_string(), is_selected: true, is_visible: true, color: Color::rgb8(0, 255, 0) },
+                Channel { name: "Blue".to_string(), is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 255) },
+                Channel { name: "Alpha".to_string(), is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
             ]),
         image: ImageBuffer::from_file("image.jpg").unwrap(),
     };
