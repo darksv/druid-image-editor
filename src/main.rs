@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
-use druid::{AppLauncher, Color, LocalizedString, UnitPoint, widget::{Flex, WidgetExt}, Widget, WindowDesc, LifeCycle, EventCtx, PaintCtx, LifeCycleCtx, BoxConstraints, Size, LayoutCtx, Event, Env, UpdateCtx, Rect};
+use druid::{AppLauncher, BoxConstraints, Color, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, LocalizedString, PaintCtx, Size, UnitPoint, UpdateCtx, widget::{Flex, WidgetExt}, Widget, WindowDesc};
 use druid::{Data, Lens};
 use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, Scroll, SizedBox};
 use piet::RenderContext;
+
 use crate::histogram::Histogram;
 use crate::image_buffer::ImageBuffer;
 use crate::image_edit::ImageEditor;
@@ -63,7 +64,7 @@ fn make_layer_item() -> impl Widget<Layer> {
                 .width(32.0)
                 .height(32.0)
                 .border(Color::grey8(0), 1.0)
-                .on_click(|ctx, data, _| data.is_selected ^= true)
+                .on_click(|_ctx, data, _| data.is_selected ^= true)
         )
         .with_flex_child(
             Label::new(|item: &Layer, _env: &_| item.name.clone())
