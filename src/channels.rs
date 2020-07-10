@@ -1,9 +1,9 @@
 
 #[derive(Clone)]
 pub(crate) struct Matrix<T> {
+    data: Vec<T>,
     width: u32,
     height: u32,
-    data: Vec<T>,
 }
 
 impl<T> Matrix<T> {

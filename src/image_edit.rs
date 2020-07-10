@@ -22,7 +22,6 @@ pub struct ImageEditor {
     start_offset_y: f64,
     end_moving_pos: Point,
     brush_size: u32,
-    t: f64,
 }
 
 enum EditorState {
@@ -47,7 +46,6 @@ impl ImageEditor {
             start_offset_x: 0.0,
             start_offset_y: 0.0,
             brush_size: 1,
-            t: 0.0,
         }
     }
 
@@ -268,18 +266,7 @@ impl Widget<AppData> for ImageEditor {
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _data: &AppData, _env: &Env) {
-        match event {
-            LifeCycle::AnimFrame(interval) => {
-                self.t += (*interval as f64) * 1e-8;
-                ctx.request_anim_frame();
-            }
-            LifeCycle::WidgetAdded => {
-                ctx.request_anim_frame();
-            }
-            _ => {}
-        }
-    }
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &AppData, _env: &Env) {}
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppData, _data: &AppData, _env: &Env) {}
 

@@ -27,7 +27,7 @@ pub struct ImageBuffer {
 }
 
 impl ImageBuffer {
-    pub(crate) fn channel(&self, kind: ChannelKind) -> View<'_, u8>{
+    pub(crate) fn channel(&self, kind: ChannelKind) -> View<'_, u8> {
         match kind {
             ChannelKind::Red => self.pixels[0].as_view(),
             ChannelKind::Green => self.pixels[1].as_view(),
@@ -37,7 +37,7 @@ impl ImageBuffer {
         }
     }
 
-    pub(crate) fn channel_mut(&mut self, kind: ChannelKind) -> ViewMut<'_, u8>{
+    pub(crate) fn channel_mut(&mut self, kind: ChannelKind) -> ViewMut<'_, u8> {
         match kind {
             ChannelKind::Red => self.pixels[0].as_view_mut(),
             ChannelKind::Green => self.pixels[1].as_view_mut(),
@@ -69,14 +69,14 @@ impl ImageBuffer {
     /// Load an image from a DynamicImage with alpha
     pub fn from_dynamic_image_with_alpha(image_data: image::DynamicImage) -> ImageBuffer {
         let rgba_image = image_data.to_rgba();
-        let sizeofimage = rgba_image.dimensions();
+        let (width, height) = rgba_image.dimensions();
 
-        let mut r = Matrix::new(sizeofimage.0, sizeofimage.1);
-        let mut g = Matrix::new(sizeofimage.0, sizeofimage.1);
-        let mut b = Matrix::new(sizeofimage.0, sizeofimage.1);
-        let mut a = Matrix::new(sizeofimage.0, sizeofimage.1);
+        let mut r = Matrix::new(width, height);
+        let mut g = Matrix::new(width, height);
+        let mut b = Matrix::new(width, height);
+        let mut a = Matrix::new(width, height);
 
-        let size_in_bytes = sizeofimage.0 as usize * sizeofimage.1 as usize * 4;
+        let size_in_bytes = width as usize * height as usize * 4;
 
         let m = unsafe { std::slice::from_raw_parts(rgba_image.as_ptr(), size_in_bytes) };
         for (i, pix) in m.chunks_exact(4).enumerate() {
@@ -89,10 +89,10 @@ impl ImageBuffer {
         ImageBuffer {
             interleaved: RefCell::new(vec![0; size_in_bytes]),
             pixels: [r, g, b, a],
-            selection: Matrix::new(sizeofimage.0,  sizeofimage.1),
-            hot_selection: Matrix::new(sizeofimage.0,  sizeofimage.1),
-            width: sizeofimage.0,
-            height: sizeofimage.1,
+            selection: Matrix::new(width, height),
+            hot_selection: Matrix::new(width, height),
+            width,
+            height,
             format: ImageFormat::RgbaSeparate,
         }
     }
@@ -112,7 +112,7 @@ impl ImageBuffer {
     pub(crate) fn to_piet(&self, offset_matrix: Affine, ctx: &mut PaintCtx, interpolation: InterpolationMode) {
         ctx.with_save(|ctx| {
             let size = self.get_size();
-// Background around the image
+            // Background around the image
             ctx.fill(size.to_rect(), &piet::Color::rgb8(38, 38, 38));
 
             ctx.transform(offset_matrix);
@@ -121,7 +121,7 @@ impl ImageBuffer {
                     size.width as usize,
                     size.height as usize,
                     &*self.interleaved.borrow(),
-// FIXME: hardcoded format... should be `self.format`
+                    // FIXME: hardcoded format... should be `self.format`
                     ImageFormat::RgbaPremul,
                 )
                 .unwrap();
@@ -192,13 +192,5 @@ pub fn merge_channels(r: &[u8], g: &[u8], b: &[u8], a: &[u8], rgba: &mut [u8]) {
         unsafe { merge_avx2(r, g, b, a, rgba); }
     } else {
         merge_scalar(r, g, b, a, rgba);
-    }
-}
-
-fn has_alpha_channel(image: &image::DynamicImage) -> bool {
-    use image::ColorType::*;
-    match image.color() {
-        La8 | Rgba8 | La16 | Rgba16 | Bgra8 => true,
-        _ => false,
     }
 }
