@@ -168,7 +168,8 @@ impl Widget<AppData> for ImageEditor {
                                     continue;
                                 }
 
-                                let image = &mut data.image;
+                                let mut layer = data.layers[0].borrow_mut();
+                                let image = layer.data.as_buffer_mut().unwrap();
                                 let kind = data.channels[index].kind;
                                 interpolate_points(begin, end, |p| {
                                     BasicBrush::new(self.brush_size).apply(
@@ -208,6 +209,8 @@ impl Widget<AppData> for ImageEditor {
                     self.state = EditorState::Selecting;
                     self.start_moving_pos = e.pos;
                 } else {
+                    self.state = EditorState::Drawing;
+
                     let transform = self.make_transform().inverse();
                     let p = transform * self.mouse_position;
 
@@ -217,7 +220,7 @@ impl Widget<AppData> for ImageEditor {
                         }
 
                         BasicBrush::new(self.brush_size).apply(
-                            data.image.channel_mut(data.channels[index].kind),
+                            data.layers[0].borrow_mut().data.as_buffer_mut().unwrap().channel_mut(data.channels[index].kind),
                             p.x as u32,
                             p.y as u32,
                         );
@@ -241,7 +244,8 @@ impl Widget<AppData> for ImageEditor {
                         let y1 = (start.y.min(end.y)) as u32;
                         let y2 = (start.y.max(end.y)) as u32;
 
-                        let mut v = data.image.channel_mut(ChannelKind::Selection);
+                        let mut layer = data.layers[0].borrow_mut();
+                        let mut v = layer.data.as_buffer_mut().unwrap().channel_mut(ChannelKind::Selection);
                         for y in y1..=y2 {
                             for x in x1..=x2 {
                                 v.set(x, y, 255);
@@ -252,6 +256,8 @@ impl Widget<AppData> for ImageEditor {
                 self.state = EditorState::Drawing;
             }
             Event::KeyDown(e) => {
+                ctx.request_paint();
+
                 match e.code {
                     Code::BracketLeft => self.brush_size -= 1,
                     Code::BracketRight => self.brush_size += 1,
@@ -308,13 +314,14 @@ impl Widget<AppData> for ImageEditor {
         ctx.clip(clip_rect);
 
         {
-            let r = data.image.channel(ChannelKind::Red).as_slice().unwrap();
-            let g = data.image.channel(ChannelKind::Green).as_slice().unwrap();
-            let b = data.image.channel(ChannelKind::Blue).as_slice().unwrap();
-            let a = data.image.channel(ChannelKind::Alpha).as_slice().unwrap();
+            let layer = data.layers[0].borrow();
+            let r = layer.data.as_buffer().unwrap().channel(ChannelKind::Red).as_slice().unwrap();
+            let g = layer.data.as_buffer().unwrap().channel(ChannelKind::Green).as_slice().unwrap();
+            let b = layer.data.as_buffer().unwrap().channel(ChannelKind::Blue).as_slice().unwrap();
+            let a = layer.data.as_buffer().unwrap().channel(ChannelKind::Alpha).as_slice().unwrap();
 
-            let rgba = &mut *data.image.interleaved.borrow_mut();
-            let zeros: Vec<_> = data.image.channel(ChannelKind::Selection)
+            let rgba = &mut *layer.data.as_buffer().unwrap().interleaved.borrow_mut();
+            let zeros: Vec<_> = layer.data.as_buffer().unwrap().channel(ChannelKind::Selection)
                 .as_slice()
                 .unwrap()
                 .iter()
@@ -332,7 +339,7 @@ impl Widget<AppData> for ImageEditor {
             }
         }
 
-        data.image.to_piet(transform, ctx, self.interpolation);
+        data.layers[0].borrow().data.as_buffer().unwrap().to_piet(transform, ctx, self.interpolation);
 
         match self.state {
             EditorState::Drawing => {

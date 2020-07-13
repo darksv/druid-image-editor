@@ -57,7 +57,7 @@ impl Widget<AppData> for Histogram {
         }
 
         // Let's burn some CPU to make a (partially transparent) image buffer
-        let image_data = make_image_data(&data.image, 256, 128);
+        let image_data = make_image_data(data.layers[0].borrow().data.as_buffer().unwrap(), 256, 128);
         let image = ctx
             .make_image(256, 128, &image_data, ImageFormat::RgbaSeparate)
             .unwrap();

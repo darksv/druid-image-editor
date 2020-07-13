@@ -9,6 +9,7 @@ use crate::histogram::Histogram;
 use crate::image_buffer::ImageBuffer;
 use crate::image_edit::ImageEditor;
 use std::fmt::Formatter;
+use std::cell::RefCell;
 
 mod image_edit;
 mod histogram;
@@ -51,10 +52,36 @@ struct Channel {
 }
 
 #[derive(Clone, Debug, Data, Lens)]
+struct Layer {
+    name: Option<String>,
+    data: LayerData,
+}
+
+#[derive(Clone, Debug, Data)]
+enum LayerData {
+    RasterImage(ImageBuffer),
+}
+
+impl LayerData {
+    fn as_buffer(&self) -> Option<&ImageBuffer> {
+        match self {
+            LayerData::RasterImage(ref buff) => Some(buff),
+        }
+    }
+
+    fn as_buffer_mut(&mut self) -> Option<&mut ImageBuffer> {
+        match self {
+            LayerData::RasterImage(ref mut buff) => Some(buff),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Data, Lens)]
 struct AppData {
     #[lens(name = "channels")]
     channels: Arc<Vec<Channel>>,
-    image: ImageBuffer,
+    #[lens(name = "layers")]
+    layers: Arc<Vec<RefCell<Layer>>>,
 }
 
 struct LayerThumbnail;
@@ -136,7 +163,12 @@ fn main() {
                 Channel { name: Some("Alpha".to_string()), kind: ChannelKind::Alpha, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
                 Channel { name: Some("Selection".to_string()), kind: ChannelKind::Selection, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
             ]),
-        image: ImageBuffer::from_file("image.jpg").unwrap(),
+        layers: Arc::new(
+            vec![RefCell::new(Layer {
+                name: None,
+                data: LayerData::RasterImage(ImageBuffer::from_file("image.jpg").unwrap()),
+            })]
+        ),
     };
     AppLauncher::with_window(main_window)
         .use_simple_logger()
