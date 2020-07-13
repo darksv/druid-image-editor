@@ -229,6 +229,27 @@ impl Widget<AppData> for ImageEditor {
                 ctx.request_focus();
 
                 self.is_mouse_down = false;
+
+                match self.state {
+                    EditorState::Drawing => {},
+                    EditorState::Moving => {},
+                    EditorState::Selecting => {
+                        let transform = self.make_transform().inverse();
+                        let start = transform * self.start_moving_pos;
+                        let end = transform * self.end_moving_pos;
+                        let x1 = (start.x.min(end.x)) as u32;
+                        let x2 = (start.x.max(end.x)) as u32;
+                        let y1 = (start.y.min(end.y)) as u32;
+                        let y2 = (start.y.max(end.y)) as u32;
+
+                        let mut v = data.image.channel_mut(ChannelKind::Selection);
+                        for y in y1..=y2 {
+                            for x in x1..=x2 {
+                                v.set(x, y, 255);
+                            }
+                        }
+                    },
+                }
                 self.state = EditorState::Drawing;
             }
             Event::KeyDown(e) => {
@@ -294,13 +315,21 @@ impl Widget<AppData> for ImageEditor {
             let a = data.image.channel(ChannelKind::Alpha).as_slice().unwrap();
 
             let rgba = &mut *data.image.interleaved.borrow_mut();
-            let zeros = vec![0u8; (data.image.width() * data.image.height()) as usize];
+            let zeros: Vec<_> = data.image.channel(ChannelKind::Selection)
+                .as_slice()
+                .unwrap()
+                .iter()
+                .copied()
+                .map(|it| 255 - it)
+                .collect();
+
+            let zeros = &zeros[..];
             match (data.channels[0].is_visible, data.channels[1].is_visible, data.channels[2].is_visible, data.channels[3].is_visible) {
-                (true, false, false, false) => merge_channels(r, r, r, zeros.as_slice(), rgba),
-                (false, true, false, false) => merge_channels(g, g, g, zeros.as_slice(), rgba),
-                (false, false, true, false) => merge_channels(b, b, b, zeros.as_slice(), rgba),
-                (false, false, false, true) => merge_channels(a, a, a, zeros.as_slice(), rgba),
-                _ => merge_channels(r, g, b, a, rgba),
+                (true, false, false, false) => merge_channels(r, r, r, zeros, rgba),
+                (false, true, false, false) => merge_channels(g, g, g, zeros, rgba),
+                (false, false, true, false) => merge_channels(b, b, b, zeros, rgba),
+                (false, false, false, true) => merge_channels(a, a, a, zeros, rgba),
+                _ => merge_channels(r, g, b, zeros, rgba),
             }
         }
 
