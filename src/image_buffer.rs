@@ -48,6 +48,10 @@ impl ImageBuffer {
             ChannelKind::HotSelection => self.hot_selection.as_view_mut(),
         }
     }
+    
+    pub(crate) fn selection_mut(&mut self) -> (ViewMut<'_, u8>, ViewMut<'_, u8>) {
+        (self.selection.as_view_mut(), self.hot_selection.as_view_mut())
+    }
 
     pub(crate) fn width(&self) -> u32 { self.width }
     pub(crate) fn height(&self) -> u32 { self.height }

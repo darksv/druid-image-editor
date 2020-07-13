@@ -7,6 +7,7 @@ use piet::{InterpolationMode, StrokeStyle};
 use crate::{AppData, ChannelKind};
 use crate::brushes::{BasicBrush, Brush};
 use crate::image_buffer::merge_channels;
+use crate::channels::Matrix;
 
 pub struct ImageEditor {
     interpolation: InterpolationMode,
@@ -27,7 +28,8 @@ pub struct ImageEditor {
 enum EditorState {
     Drawing,
     Moving,
-    Selecting,
+    ShapeSelection,
+    BrushSelection,
 }
 
 impl ImageEditor {
@@ -186,8 +188,23 @@ impl Widget<AppData> for ImageEditor {
                             self.offset_x = e.pos.x - image_pos_x;
                             self.offset_y = e.pos.y - image_pos_y;
                         }
-                        EditorState::Selecting => {
+                        EditorState::ShapeSelection => {
                             self.end_moving_pos = self.mouse_position;
+                        }
+                        EditorState::BrushSelection => {
+                            let transform = self.make_transform().inverse();
+                            let begin = transform * self.previous_mouse_position;
+                            let end = transform * self.mouse_position;
+
+                            let mut layer = data.layers[0].borrow_mut();
+                            let image = layer.data.as_buffer_mut().unwrap();
+                            interpolate_points(begin, end, |p| {
+                                BasicBrush::new(self.brush_size).apply(
+                                    image.channel_mut(ChannelKind::HotSelection),
+                                    p.x as u32,
+                                    p.y as u32,
+                                );
+                            });
                         }
                     }
                 }
@@ -205,8 +222,10 @@ impl Widget<AppData> for ImageEditor {
                     self.start_moving_pos = e.pos;
                     self.start_offset_x = self.offset_x;
                     self.start_offset_y = self.offset_y;
+                } else if e.mods.shift() {
+                    self.state = EditorState::BrushSelection;
                 } else if e.mods.ctrl() && e.mods.shift() {
-                    self.state = EditorState::Selecting;
+                    self.state = EditorState::ShapeSelection;
                     self.start_moving_pos = e.pos;
                 } else {
                     self.state = EditorState::Drawing;
@@ -233,9 +252,9 @@ impl Widget<AppData> for ImageEditor {
                 self.is_mouse_down = false;
 
                 match self.state {
-                    EditorState::Drawing => {},
-                    EditorState::Moving => {},
-                    EditorState::Selecting => {
+                    EditorState::Drawing => {}
+                    EditorState::Moving => {}
+                    EditorState::ShapeSelection => {
                         let transform = self.make_transform().inverse();
                         let start = transform * self.start_moving_pos;
                         let end = transform * self.end_moving_pos;
@@ -251,7 +270,18 @@ impl Widget<AppData> for ImageEditor {
                                 v.set(x, y, 255);
                             }
                         }
-                    },
+                    }
+                    EditorState::BrushSelection => {
+                        let mut layer = data.layers[0].borrow_mut();
+                        let (mut sel, mut hot_sel) = layer.data.as_buffer_mut().unwrap().selection_mut();
+
+                        for y in 0..sel.height() {
+                            for x in 0..sel.width() {
+                                sel.set(x, y, sel.get(x, y).saturating_add(hot_sel.get(x, y)));
+                                hot_sel.set(x, y, 0);
+                            }
+                        }
+                    }
                 }
                 self.state = EditorState::Drawing;
             }
@@ -319,37 +349,45 @@ impl Widget<AppData> for ImageEditor {
             let g = layer.data.as_buffer().unwrap().channel(ChannelKind::Green).as_slice().unwrap();
             let b = layer.data.as_buffer().unwrap().channel(ChannelKind::Blue).as_slice().unwrap();
             let a = layer.data.as_buffer().unwrap().channel(ChannelKind::Alpha).as_slice().unwrap();
+            let s = layer.data.as_buffer().unwrap().channel(ChannelKind::Selection);
+            let hs = layer.data.as_buffer().unwrap().channel(ChannelKind::HotSelection);
 
+            let mut overlay = layer.data.as_buffer().unwrap().channel(ChannelKind::Alpha).to_matrix();
+            for y in 0..overlay.height() {
+                for x in 0..overlay.width() {
+                    let s = s.get(x, y);
+                    let hs = hs.get(x, y);
+
+                   match (hs, s) {
+                        (255, _) => overlay.set(x, y, 96),
+                        (_, 255) => overlay.set(x, y, 128),
+                        _ => ()
+                    }
+                }
+            }
+
+            let alpha = overlay.as_slice();
             let rgba = &mut *layer.data.as_buffer().unwrap().interleaved.borrow_mut();
-            let zeros: Vec<_> = layer.data.as_buffer().unwrap().channel(ChannelKind::Selection)
-                .as_slice()
-                .unwrap()
-                .iter()
-                .copied()
-                .map(|it| 255 - it)
-                .collect();
-
-            let zeros = &zeros[..];
             match (data.channels[0].is_visible, data.channels[1].is_visible, data.channels[2].is_visible, data.channels[3].is_visible) {
-                (true, false, false, false) => merge_channels(r, r, r, zeros, rgba),
-                (false, true, false, false) => merge_channels(g, g, g, zeros, rgba),
-                (false, false, true, false) => merge_channels(b, b, b, zeros, rgba),
-                (false, false, false, true) => merge_channels(a, a, a, zeros, rgba),
-                _ => merge_channels(r, g, b, zeros, rgba),
+                (true, false, false, false) => merge_channels(r, r, r, alpha, rgba),
+                (false, true, false, false) => merge_channels(g, g, g, alpha, rgba),
+                (false, false, true, false) => merge_channels(b, b, b, alpha, rgba),
+                (false, false, false, true) => merge_channels(a, a, a, alpha, rgba),
+                _ => merge_channels(r, g, b, alpha, rgba),
             }
         }
 
         data.layers[0].borrow().data.as_buffer().unwrap().to_piet(transform, ctx, self.interpolation);
 
         match self.state {
-            EditorState::Drawing => {
+            EditorState::Drawing | EditorState::BrushSelection => {
                 ctx.with_save(|ctx| {
                     let c = piet::Color::rgb8(90, 100, 20);
                     ctx.stroke(Circle::new(self.mouse_position, (self.brush_size as f64) / 2.0 * self.scale), &c, 1.0);
                 });
             }
             EditorState::Moving => {}
-            EditorState::Selecting => {
+            EditorState::ShapeSelection => {
                 ctx.with_save(|ctx| {
                     let c = piet::Color::rgb8(0, 0, 0);
                     let mut ss = StrokeStyle::new();

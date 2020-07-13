@@ -120,6 +120,12 @@ impl<'a, T> View<'a, T> {
             None
         }
     }
+
+    pub(crate) fn to_matrix(&self) -> Matrix<T> where T: Copy + Default {
+        let mut matrix = Matrix::new(self.width, self.height);
+        matrix.as_slice_mut().copy_from_slice(self.as_slice().expect("whole buffer view"));
+        matrix
+    }
 }
 
 pub(crate) struct ViewMut<'a, T> {
