@@ -25,6 +25,7 @@ enum ChannelKind {
     Blue,
     Alpha,
     Selection,
+    HotSelection,
 }
 
 impl std::fmt::Display for ChannelKind {
@@ -35,6 +36,7 @@ impl std::fmt::Display for ChannelKind {
             ChannelKind::Blue => "Blue",
             ChannelKind::Alpha => "Alpha",
             ChannelKind::Selection => "Selection",
+            ChannelKind::HotSelection => "Hot Selection",
         })
     }
 }
@@ -234,6 +236,7 @@ fn main() {
                 Channel { name: Some("Blue".to_string()), kind: ChannelKind::Blue, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 255) },
                 Channel { name: Some("Alpha".to_string()), kind: ChannelKind::Alpha, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
                 Channel { name: Some("Selection".to_string()), kind: ChannelKind::Selection, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
+                Channel { name: Some("Hot Selection".to_string()), kind: ChannelKind::HotSelection, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
             ]),
         layers: Arc::new(
             vec![RefCell::new(Layer {

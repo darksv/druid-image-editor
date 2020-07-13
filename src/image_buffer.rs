@@ -34,6 +34,7 @@ impl ImageBuffer {
             ChannelKind::Blue => self.pixels[2].as_view(),
             ChannelKind::Alpha => self.pixels[3].as_view(),
             ChannelKind::Selection => self.selection.as_view(),
+            ChannelKind::HotSelection => self.hot_selection.as_view(),
         }
     }
 
@@ -44,6 +45,7 @@ impl ImageBuffer {
             ChannelKind::Blue => self.pixels[2].as_view_mut(),
             ChannelKind::Alpha => self.pixels[3].as_view_mut(),
             ChannelKind::Selection => self.selection.as_view_mut(),
+            ChannelKind::HotSelection => self.hot_selection.as_view_mut(),
         }
     }
 
@@ -188,7 +190,7 @@ pub fn merge_channels(r: &[u8], g: &[u8], b: &[u8], a: &[u8], rgba: &mut [u8]) {
         }
     }
 
-    if is_x86_feature_detected!("avx2") & &is_x86_feature_detected!("avx") {
+    if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("avx") {
         unsafe { merge_avx2(r, g, b, a, rgba); }
     } else {
         merge_scalar(r, g, b, a, rgba);
