@@ -199,22 +199,6 @@ impl Widget<AppData> for ImageEditor {
                 ctx.request_focus();
 
                 self.is_mouse_down = true;
-
-                let transform = self.make_transform().inverse();
-                let p = transform * self.mouse_position;
-
-                for index in 0..4 {
-                    if !data.channels[index].is_selected {
-                        continue;
-                    }
-
-                    BasicBrush::new(self.brush_size).apply(
-                        data.image.channel_mut(data.channels[index].kind),
-                        p.x as u32,
-                        p.y as u32,
-                    );
-                }
-
                 if e.mods.alt() {
                     self.state = EditorState::Moving;
                     self.start_moving_pos = e.pos;
@@ -223,6 +207,21 @@ impl Widget<AppData> for ImageEditor {
                 } else if e.mods.ctrl() && e.mods.shift() {
                     self.state = EditorState::Selecting;
                     self.start_moving_pos = e.pos;
+                } else {
+                    let transform = self.make_transform().inverse();
+                    let p = transform * self.mouse_position;
+
+                    for index in 0..4 {
+                        if !data.channels[index].is_selected {
+                            continue;
+                        }
+
+                        BasicBrush::new(self.brush_size).apply(
+                            data.image.channel_mut(data.channels[index].kind),
+                            p.x as u32,
+                            p.y as u32,
+                        );
+                    }
                 }
             }
             Event::MouseUp(_e) => {
