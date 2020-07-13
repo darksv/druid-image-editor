@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use druid::{AppLauncher, BoxConstraints, Color, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, LocalizedString, PaintCtx, Size, UnitPoint, UpdateCtx, widget::{Flex, WidgetExt}, Widget, WindowDesc};
 use druid::{Data, Lens};
-use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, Scroll, SizedBox};
+use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, Scroll, SizedBox, ListIter};
 use piet::RenderContext;
 
 use crate::histogram::Histogram;
@@ -54,6 +54,8 @@ struct Channel {
 #[derive(Clone, Debug, Data, Lens)]
 struct Layer {
     name: Option<String>,
+    is_selected: bool,
+    is_visible: bool,
     data: LayerData,
 }
 
@@ -84,9 +86,29 @@ struct AppData {
     layers: Arc<Vec<RefCell<Layer>>>,
 }
 
-struct LayerThumbnail;
+impl ListIter<Layer> for Arc<Vec<RefCell<Layer>>> {
+    fn for_each(&self, mut cb: impl FnMut(&Layer, usize)) {
+        for (index, item) in self.iter().enumerate() {
+            let item = item.borrow();
+            cb(&*item, index);
+        }
+    }
 
-impl Widget<Channel> for LayerThumbnail {
+    fn for_each_mut(&mut self, mut cb: impl FnMut(&mut Layer, usize)) {
+        for (index, item) in self.iter().enumerate() {
+            let mut item = item.borrow_mut();
+            cb(&mut *item, index);
+        }
+    }
+
+    fn data_len(&self) -> usize {
+        self.len()
+    }
+}
+
+struct ChannelThumbnail;
+
+impl Widget<Channel> for ChannelThumbnail {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut Channel, _env: &Env) {}
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &Channel, _env: &Env) {}
@@ -107,10 +129,34 @@ impl Widget<Channel> for LayerThumbnail {
     }
 }
 
-fn make_layer_item() -> impl Widget<Channel> {
+struct LayerThumbnail;
+
+impl Widget<Layer> for LayerThumbnail {
+    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut Layer, _env: &Env) {}
+
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &Layer, _env: &Env) {}
+
+    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &Layer, _data: &Layer, _env: &Env) {}
+
+    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &Layer, _env: &Env) -> Size {
+        bc.max()
+    }
+
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &Layer, _env: &Env) {
+        let size = ctx.size();
+        let rect = druid::Rect::from_origin_size(druid::Point::ORIGIN, size);
+        // ctx.fill(rect, &data.color);
+        if data.is_selected {
+            ctx.stroke(rect, &Color::rgba8(255, 255, 255, 255), 2.0);
+        }
+    }
+}
+
+
+fn make_channel_item() -> impl Widget<Channel> {
     Flex::row()
         .with_child(
-            SizedBox::new(LayerThumbnail)
+            SizedBox::new(ChannelThumbnail)
                 .width(32.0)
                 .height(32.0)
                 .border(Color::grey8(0), 1.0)
@@ -128,6 +174,27 @@ fn make_layer_item() -> impl Widget<Channel> {
         .padding(5.0)
 }
 
+fn make_layer_item() -> impl Widget<Layer> {
+    Flex::row()
+        .with_child(
+            SizedBox::new(LayerThumbnail)
+                .width(32.0)
+                .height(32.0)
+                .border(Color::grey8(0), 1.0)
+                .on_click(|_ctx, data, _| data.is_selected ^= true)
+        )
+        .with_flex_child(
+            Label::new(|item: &Layer, _env: &_| item.name.as_ref().cloned().unwrap_or_else(|| "New layer".into()))
+                .align_vertical(UnitPoint::LEFT)
+                .expand().height(42.0)
+            , 1.0)
+        .with_flex_child(
+            Checkbox::new(LabelText::Specific(Default::default()))
+                .lens(Layer::is_visible),
+            FlexParams::default())
+        .padding(5.0)
+}
+
 
 fn main() {
     fn ui_builder() -> impl Widget<AppData> {
@@ -138,7 +205,7 @@ fn main() {
                 SizedBox::new(
                     Flex::column()
                         .with_flex_child(
-                            Scroll::new(List::new(|| make_layer_item()))
+                            Scroll::new(List::new(|| make_channel_item()))
                                 .vertical()
                                 .lens(AppData::channels)
                             , 1.0)
@@ -146,6 +213,11 @@ fn main() {
                             SizedBox::new(Histogram {})
                                 .width(256.0)
                                 .height(100.0), 1.0)
+                        .with_flex_child(
+                            Scroll::new(List::new(|| make_layer_item()))
+                                .vertical()
+                                .lens(AppData::layers)
+                            , 1.0)
                 ).width(256.0));
         root
     }
@@ -166,6 +238,8 @@ fn main() {
         layers: Arc::new(
             vec![RefCell::new(Layer {
                 name: None,
+                is_selected: true,
+                is_visible: true,
                 data: LayerData::RasterImage(ImageBuffer::from_file("image.jpg").unwrap()),
             })]
         ),
