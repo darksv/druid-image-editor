@@ -7,7 +7,6 @@ use druid::piet::{InterpolationMode, StrokeStyle};
 use crate::{AppData, ChannelKind};
 use crate::brushes::{BasicBrush, Brush};
 use crate::image_buffer::merge_channels;
-use crate::channels::Matrix;
 
 pub struct ImageEditor {
     interpolation: InterpolationMode,

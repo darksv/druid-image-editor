@@ -16,13 +16,13 @@ pub struct Point<T> {
 }
 
 impl<T> Point<T> {
+    #[allow(unused)]
     const fn new(x: T, y: T) -> Self {
         Self { x, y }
     }
 }
 
-
-
+#[allow(unused)]
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 enum BorderType {
     Outer,
@@ -30,6 +30,7 @@ enum BorderType {
 }
 
 
+#[allow(unused)]
 fn trace_border(
     start: Point<u32>,
     before_start: Point<u32>,
@@ -209,6 +210,7 @@ fn trace_border(
 //     contours
 // }
 
+#[allow(unused)]
 pub(crate) fn find_contours(
     source: View<'_, u8>,
 ) -> Vec<Contour> {

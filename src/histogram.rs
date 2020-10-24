@@ -6,11 +6,9 @@ use crate::image_buffer::ImageBuffer;
 
 pub struct Histogram {}
 
-struct ChannelData {}
-
 
 impl Widget<AppData> for Histogram {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut AppData, _env: &Env) {}
+    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppData, _env: &Env) {}
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &AppData, _env: &Env) {}
 

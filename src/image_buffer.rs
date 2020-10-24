@@ -53,7 +53,10 @@ impl ImageBuffer {
         (self.selection.as_view_mut(), self.hot_selection.as_view_mut())
     }
 
+    #[allow(unused)]
     pub(crate) fn width(&self) -> u32 { self.width }
+
+    #[allow(unused)]
     pub(crate) fn height(&self) -> u32 { self.height }
 }
 
@@ -151,15 +154,15 @@ pub fn merge_channels(r: &[u8], g: &[u8], b: &[u8], a: &[u8], rgba: &mut [u8]) {
 
         let mut out_idx = 0;
         for i in (0..r.len()).step_by(32) {
-            let vr = x86::_mm256_loadu_si256(r[i..].as_ptr().cast());
-            let vg = x86::_mm256_loadu_si256(g[i..].as_ptr().cast());
-            let vb = x86::_mm256_loadu_si256(b[i..].as_ptr().cast());
-            let va = x86::_mm256_loadu_si256(a[i..].as_ptr().cast());
+            let vr = x86::_mm256_loadu_si256(r[i..].as_ptr().cast());  // r0 r1 r2 r3 ...
+            let vg = x86::_mm256_loadu_si256(g[i..].as_ptr().cast());  // g0 g1 g2 g3 ...
+            let vb = x86::_mm256_loadu_si256(b[i..].as_ptr().cast());  // b0 b1 b2 b3 ...
+            let va = x86::_mm256_loadu_si256(a[i..].as_ptr().cast());  // a0 a1 a2 a3
 
-            let vrg_lo = x86::_mm256_unpacklo_epi8(vr, vg);
-            let vba_lo = x86::_mm256_unpacklo_epi8(vb, va);
-            let vrgba_lo_lo = x86::_mm256_unpacklo_epi16(vrg_lo, vba_lo);
-            let vrgba_lo_hi = x86::_mm256_unpackhi_epi16(vrg_lo, vba_lo);
+            let vrg_lo = x86::_mm256_unpacklo_epi8(vr, vg);               // r0 g0 r1 r1 r2 r2 ...
+            let vba_lo = x86::_mm256_unpacklo_epi8(vb, va);               // b0 a0 b1 a1 b2 a2 ...
+            let vrgba_lo_lo = x86::_mm256_unpacklo_epi16(vrg_lo, vba_lo); // r0 g0 b0 a0 r1 g1 ...
+            let vrgba_lo_hi = x86::_mm256_unpackhi_epi16(vrg_lo, vba_lo); //
 
             let vrg_hi = x86::_mm256_unpackhi_epi8(vr, vg);
             let vba_hi = x86::_mm256_unpackhi_epi8(vb, va);
