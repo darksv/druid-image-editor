@@ -7,10 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-druid = { git = "https://github.com/linebender/druid.git", rev="e03c8f3243a4e8dd8885d075cef71ad5198cd6c6", features = ["image"] }
-image = "0.23.2"
-piet = "*"
-kurbo = "*"
+druid = { git = "https://github.com/linebender/druid.git", rev="9d166f614ba3e70d54a684e3b8f74b1e5b5ee3a3", features = ["image"] }
+image = "*"
 
 [profile.release]
 debug = true

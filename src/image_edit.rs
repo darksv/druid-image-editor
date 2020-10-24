@@ -1,8 +1,8 @@
 use std::ops::Neg;
 
-use druid::{Affine, BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget};
-use kurbo::Circle;
-use piet::{InterpolationMode, StrokeStyle};
+use druid::{Affine, BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget, Color};
+use druid::kurbo::Circle;
+use druid::piet::{InterpolationMode, StrokeStyle};
 
 use crate::{AppData, ChannelKind};
 use crate::brushes::{BasicBrush, Brush};
@@ -382,14 +382,14 @@ impl Widget<AppData> for ImageEditor {
         match self.state {
             EditorState::Drawing | EditorState::BrushSelection => {
                 ctx.with_save(|ctx| {
-                    let c = piet::Color::rgb8(90, 100, 20);
+                    let c = Color::rgb8(90, 100, 20);
                     ctx.stroke(Circle::new(self.mouse_position, (self.brush_size as f64) / 2.0 * self.scale), &c, 1.0);
                 });
             }
             EditorState::Moving => {}
             EditorState::ShapeSelection => {
                 ctx.with_save(|ctx| {
-                    let c = piet::Color::rgb8(0, 0, 0);
+                    let c = Color::rgb8(0, 0, 0);
                     let mut ss = StrokeStyle::new();
                     ss.set_dash(vec![3.0, 1.0], 0.0);
 

@@ -3,8 +3,8 @@ use std::error::Error;
 use std::fmt;
 use std::path::Path;
 
-use druid::{Affine, Data, PaintCtx, RenderContext, Size};
-use piet::{ImageFormat, InterpolationMode};
+use druid::{Affine, Data, PaintCtx, RenderContext, Size, Color};
+use druid::piet::{ImageFormat, InterpolationMode};
 
 use crate::ChannelKind;
 use crate::channels::{Matrix, View, ViewMut};
@@ -119,7 +119,7 @@ impl ImageBuffer {
         ctx.with_save(|ctx| {
             let size = self.get_size();
             // Background around the image
-            ctx.fill(size.to_rect(), &piet::Color::rgb8(38, 38, 38));
+            ctx.fill(size.to_rect(), &Color::rgb8(38, 38, 38));
 
             ctx.transform(offset_matrix);
             let im = ctx

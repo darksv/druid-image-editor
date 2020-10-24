@@ -3,7 +3,7 @@ use std::sync::Arc;
 use druid::{AppLauncher, BoxConstraints, Color, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, LocalizedString, PaintCtx, Size, UnitPoint, UpdateCtx, widget::{Flex, WidgetExt}, Widget, WindowDesc};
 use druid::{Data, Lens};
 use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, Scroll, SizedBox, ListIter};
-use piet::RenderContext;
+use druid::RenderContext;
 
 use crate::histogram::Histogram;
 use crate::image_buffer::ImageBuffer;
@@ -170,7 +170,7 @@ fn make_channel_item() -> impl Widget<Channel> {
                 .expand().height(42.0)
             , 1.0)
         .with_flex_child(
-            Checkbox::new(LabelText::Specific(Default::default()))
+            Checkbox::new(LabelText::from(""))
                 .lens(Channel::is_visible),
             FlexParams::default())
         .padding(5.0)
@@ -191,7 +191,7 @@ fn make_layer_item() -> impl Widget<Layer> {
                 .expand().height(42.0)
             , 1.0)
         .with_flex_child(
-            Checkbox::new(LabelText::Specific(Default::default()))
+            Checkbox::new(LabelText::from(""))
                 .lens(Layer::is_visible),
             FlexParams::default())
         .padding(5.0)
