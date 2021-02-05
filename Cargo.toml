@@ -4,11 +4,9 @@ version = "0.1.0"
 authors = ["darksv <darek969-12@o2.pl>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-druid = { git = "https://github.com/linebender/druid.git", rev="9d166f614ba3e70d54a684e3b8f74b1e5b5ee3a3", features = ["image"] }
-image = "*"
+druid = { git = "https://github.com/linebender/druid.git", rev="c6e5a5ed925fbf722af482e168ff1af44c926110", features = ["image"] }
+image = "0.23.13"
 
 [profile.release]
 debug = true

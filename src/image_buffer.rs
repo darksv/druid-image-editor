@@ -77,7 +77,7 @@ impl ImageBuffer {
 
     /// Load an image from a DynamicImage with alpha
     pub fn from_dynamic_image_with_alpha(image_data: image::DynamicImage) -> ImageBuffer {
-        let rgba_image = image_data.to_rgba();
+        let rgba_image = image_data.to_rgba8();
         let (width, height) = rgba_image.dimensions();
 
         let mut r = Matrix::new(width, height);

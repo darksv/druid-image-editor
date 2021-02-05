@@ -224,7 +224,7 @@ fn main() {
         root
     }
 
-    let main_window = WindowDesc::new(ui_builder)
+    let main_window = WindowDesc::new(ui_builder())
         .title(LocalizedString::new("Maditor"))
         .window_size((1378.0, 768.0));
 
