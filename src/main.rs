@@ -6,10 +6,10 @@ use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, Scroll, SizedB
 use druid::RenderContext;
 
 use crate::histogram::Histogram;
-use crate::image_buffer::ImageBuffer;
+use crate::image_buffer::{ImageBuffer, merge_channels};
 use crate::image_edit::ImageEditor;
 use std::fmt::Formatter;
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut, Cell};
 
 mod image_edit;
 mod histogram;
@@ -86,6 +86,56 @@ struct AppData {
     channels: Arc<Vec<Channel>>,
     #[lens(name = "layers")]
     layers: Arc<Vec<RefCell<Layer>>>,
+    #[data(ignore)]
+    dirty: Cell<bool>,
+}
+
+impl AppData {
+    pub fn layer_mut(&self, index: usize) -> RefMut<'_, Layer> {
+        self.dirty.set(true);
+        self.layers[index].borrow_mut()
+    }
+
+    fn ensure_fresh(&self) {
+        if !self.dirty.get() {
+            return;
+        }
+
+        let layer = self.layers[0].borrow();
+        let buff = layer.data.as_buffer().unwrap();
+        let r =  buff.channel(ChannelKind::Red).as_slice().unwrap();
+        let g =  buff.channel(ChannelKind::Green).as_slice().unwrap();
+        let b =  buff.channel(ChannelKind::Blue).as_slice().unwrap();
+        let a =  buff.channel(ChannelKind::Alpha).as_slice().unwrap();
+        let s =  buff.channel(ChannelKind::Selection);
+        let hs = buff.channel(ChannelKind::HotSelection);
+
+        let mut overlay = buff.channel(ChannelKind::Alpha).to_matrix();
+        for y in 0..overlay.height() {
+            for x in 0..overlay.width() {
+                let s = s.get(x, y);
+                let hs = hs.get(x, y);
+
+                match (hs, s) {
+                    (255, _) => overlay.set(x, y, 96),
+                    (_, 255) => overlay.set(x, y, 128),
+                    _ => ()
+                }
+            }
+        }
+
+        let alpha = overlay.as_slice();
+        let rgba = &mut *layer.data.as_buffer().unwrap().interleaved.borrow_mut();
+        match (self.channels[0].is_visible, self.channels[1].is_visible, self.channels[2].is_visible, self.channels[3].is_visible) {
+            (true, false, false, false) => merge_channels(r, r, r, alpha, rgba),
+            (false, true, false, false) => merge_channels(g, g, g, alpha, rgba),
+            (false, false, true, false) => merge_channels(b, b, b, alpha, rgba),
+            (false, false, false, true) => merge_channels(a, a, a, alpha, rgba),
+            _ => merge_channels(r, g, b, alpha, rgba),
+        }
+
+        self.dirty.set(false);
+    }
 }
 
 impl ListIter<Layer> for Arc<Vec<RefCell<Layer>>> {
@@ -246,6 +296,7 @@ fn main() {
                 data: LayerData::RasterImage(ImageBuffer::from_file("image.jpg").unwrap()),
             })]
         ),
+        dirty: Cell::new(true),
     };
     AppLauncher::with_window(main_window)
         .use_simple_logger()

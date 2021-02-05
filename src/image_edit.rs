@@ -6,7 +6,6 @@ use druid::piet::{InterpolationMode, StrokeStyle};
 
 use crate::{AppData, ChannelKind};
 use crate::brushes::{BasicBrush, Brush};
-use crate::image_buffer::merge_channels;
 
 pub struct ImageEditor {
     interpolation: InterpolationMode,
@@ -169,7 +168,7 @@ impl Widget<AppData> for ImageEditor {
                                     continue;
                                 }
 
-                                let mut layer = data.layers[0].borrow_mut();
+                                let mut layer = data.layer_mut(0);
                                 let image = layer.data.as_buffer_mut().unwrap();
                                 let kind = data.channels[index].kind;
                                 interpolate_points(begin, end, |p| {
@@ -195,7 +194,7 @@ impl Widget<AppData> for ImageEditor {
                             let begin = transform * self.previous_mouse_position;
                             let end = transform * self.mouse_position;
 
-                            let mut layer = data.layers[0].borrow_mut();
+                            let mut layer = data.layer_mut(0);
                             let image = layer.data.as_buffer_mut().unwrap();
                             interpolate_points(begin, end, |p| {
                                 BasicBrush::new(self.brush_size).apply(
@@ -262,7 +261,7 @@ impl Widget<AppData> for ImageEditor {
                         let y1 = (start.y.min(end.y)) as u32;
                         let y2 = (start.y.max(end.y)) as u32;
 
-                        let mut layer = data.layers[0].borrow_mut();
+                        let mut layer = data.layer_mut(0);
                         let mut v = layer.data.as_buffer_mut().unwrap().channel_mut(ChannelKind::Selection);
                         for y in y1..=y2 {
                             for x in x1..=x2 {
@@ -271,7 +270,7 @@ impl Widget<AppData> for ImageEditor {
                         }
                     }
                     EditorState::BrushSelection => {
-                        let mut layer = data.layers[0].borrow_mut();
+                        let mut layer = data.layer_mut(0);
                         let (mut sel, mut hot_sel) = layer.data.as_buffer_mut().unwrap().selection_mut();
 
                         for y in 0..sel.height() {
@@ -337,45 +336,13 @@ impl Widget<AppData> for ImageEditor {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppData, _env: &Env) {
+        let s = std::time::Instant::now();
         let transform = self.make_transform();
 
         let clip_rect = Rect::ZERO.with_size(ctx.size());
         ctx.clip(clip_rect);
 
-        {
-            let layer = data.layers[0].borrow();
-            let r = layer.data.as_buffer().unwrap().channel(ChannelKind::Red).as_slice().unwrap();
-            let g = layer.data.as_buffer().unwrap().channel(ChannelKind::Green).as_slice().unwrap();
-            let b = layer.data.as_buffer().unwrap().channel(ChannelKind::Blue).as_slice().unwrap();
-            let a = layer.data.as_buffer().unwrap().channel(ChannelKind::Alpha).as_slice().unwrap();
-            let s = layer.data.as_buffer().unwrap().channel(ChannelKind::Selection);
-            let hs = layer.data.as_buffer().unwrap().channel(ChannelKind::HotSelection);
-
-            let mut overlay = layer.data.as_buffer().unwrap().channel(ChannelKind::Alpha).to_matrix();
-            for y in 0..overlay.height() {
-                for x in 0..overlay.width() {
-                    let s = s.get(x, y);
-                    let hs = hs.get(x, y);
-
-                   match (hs, s) {
-                        (255, _) => overlay.set(x, y, 96),
-                        (_, 255) => overlay.set(x, y, 128),
-                        _ => ()
-                    }
-                }
-            }
-
-            let alpha = overlay.as_slice();
-            let rgba = &mut *layer.data.as_buffer().unwrap().interleaved.borrow_mut();
-            match (data.channels[0].is_visible, data.channels[1].is_visible, data.channels[2].is_visible, data.channels[3].is_visible) {
-                (true, false, false, false) => merge_channels(r, r, r, alpha, rgba),
-                (false, true, false, false) => merge_channels(g, g, g, alpha, rgba),
-                (false, false, true, false) => merge_channels(b, b, b, alpha, rgba),
-                (false, false, false, true) => merge_channels(a, a, a, alpha, rgba),
-                _ => merge_channels(r, g, b, alpha, rgba),
-            }
-        }
-
+        data.ensure_fresh();
         data.layers[0].borrow().data.as_buffer().unwrap().to_piet(transform, ctx, self.interpolation);
 
         match self.state {
@@ -401,6 +368,8 @@ impl Widget<AppData> for ImageEditor {
                 });
             }
         }
+
+        dbg!(s.elapsed());
     }
 }
 
