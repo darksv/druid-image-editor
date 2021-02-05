@@ -103,11 +103,11 @@ impl AppData {
 
         let layer = self.layers[0].borrow();
         let buff = layer.data.as_buffer().unwrap();
-        let r =  buff.channel(ChannelKind::Red).as_slice().unwrap();
-        let g =  buff.channel(ChannelKind::Green).as_slice().unwrap();
-        let b =  buff.channel(ChannelKind::Blue).as_slice().unwrap();
-        let a =  buff.channel(ChannelKind::Alpha).as_slice().unwrap();
-        let s =  buff.channel(ChannelKind::Selection);
+        let r = buff.channel(ChannelKind::Red).as_slice().unwrap();
+        let g = buff.channel(ChannelKind::Green).as_slice().unwrap();
+        let b = buff.channel(ChannelKind::Blue).as_slice().unwrap();
+        let a = buff.channel(ChannelKind::Alpha).as_slice().unwrap();
+        let s = buff.channel(ChannelKind::Selection);
         let hs = buff.channel(ChannelKind::HotSelection);
 
         let mut overlay = buff.channel(ChannelKind::Alpha).to_matrix();
@@ -249,32 +249,30 @@ fn make_layer_item() -> impl Widget<Layer> {
 
 
 fn main() {
-    fn ui_builder() -> impl Widget<AppData> {
-        let editor = ImageEditor::new();
-        let root = Flex::row()
-            .with_flex_child(editor, 1.0)
-            .with_child(
-                SizedBox::new(
-                    Flex::column()
-                        .with_flex_child(
-                            Scroll::new(List::new(|| make_channel_item()))
-                                .vertical()
-                                .lens(AppData::channels)
-                            , 1.0)
-                        .with_flex_child(
-                            SizedBox::new(Histogram {})
-                                .width(256.0)
-                                .height(100.0), 1.0)
-                        .with_flex_child(
-                            Scroll::new(List::new(|| make_layer_item()))
-                                .vertical()
-                                .lens(AppData::layers)
-                            , 1.0)
-                ).width(256.0));
-        root
-    }
+    let editor = ImageEditor::new();
+    let root = Flex::row()
+        .with_flex_child(editor, 1.0)
+        .with_child(
+            SizedBox::new(
+                Flex::column()
+                    .with_flex_child(
+                        Scroll::new(List::new(make_channel_item))
+                            .vertical()
+                            .lens(AppData::channels)
+                        , 1.0)
+                    .with_flex_child(
+                        SizedBox::new(Histogram {})
+                            .width(256.0)
+                            .height(100.0), 1.0)
+                    .with_flex_child(
+                        Scroll::new(List::new(make_layer_item))
+                            .vertical()
+                            .lens(AppData::layers)
+                        , 1.0)
+            ).width(256.0)
+        );
 
-    let main_window = WindowDesc::new(ui_builder())
+    let main_window = WindowDesc::new(root)
         .title(LocalizedString::new("Maditor"))
         .window_size((1378.0, 768.0));
 
