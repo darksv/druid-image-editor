@@ -4,7 +4,7 @@ use druid::kurbo::Circle;
 use druid::piet::{InterpolationMode, StrokeStyle};
 
 use crate::AppData;
-use crate::tools::{DrawTool, Tool, BrushSelectionTool, ShapeSelectionTool, MovingTool};
+use crate::tools::{DrawTool, Tool, BrushSelectionTool, ShapeSelectionTool, MovingTool, ToolRef};
 
 pub struct ImageEditor {
     interpolation: InterpolationMode,
@@ -37,6 +37,15 @@ impl ImageEditor {
             moving_tool: MovingTool::new(),
         }
     }
+
+    fn get_tool(&mut self) -> ToolRef {
+        match self.state {
+            EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(self.brush_size))),
+            EditorState::Moving => ToolRef::Ref(&mut self.moving_tool),
+            EditorState::ShapeSelection => ToolRef::Ref(&mut self.shape_sel_tool),
+            EditorState::BrushSelection => ToolRef::Owned(Box::new(BrushSelectionTool::new(self.brush_size))),
+        }
+    }
 }
 
 impl Widget<AppData> for ImageEditor {
@@ -49,24 +58,10 @@ impl Widget<AppData> for ImageEditor {
                 self.mouse_position = e.pos;
 
                 if self.is_mouse_down {
-                    match self.state {
-                        EditorState::Drawing => {
-                            DrawTool::new(self.brush_size)
-                                .mouse_move(self.mouse_position, self.previous_mouse_position, self.moving_tool.transform(), data);
-                        }
-                        EditorState::Moving => {
-                            self.moving_tool
-                                .mouse_move(self.mouse_position, self.previous_mouse_position, self.moving_tool.transform(), data);
-                        }
-                        EditorState::ShapeSelection => {
-                            self.shape_sel_tool
-                                .mouse_move(self.mouse_position, self.previous_mouse_position, self.moving_tool.transform(), data);
-                        }
-                        EditorState::BrushSelection => {
-                            BrushSelectionTool::new(self.brush_size)
-                                .mouse_move(self.mouse_position, self.previous_mouse_position, self.moving_tool.transform(), data);
-                        }
-                    }
+                    let transform = self.moving_tool.transform();
+                    let pos = self.mouse_position;
+                    let prev_pos = self.previous_mouse_position;
+                    self.get_tool().as_mut().mouse_move(pos, prev_pos, transform, data);
                 }
 
                 ctx.set_cursor(&Cursor::OpenHand);
@@ -77,40 +72,28 @@ impl Widget<AppData> for ImageEditor {
                 ctx.request_focus();
 
                 self.is_mouse_down = true;
-                if e.mods.alt() {
-                    self.state = EditorState::Moving;
-                    self.moving_tool
-                        .mouse_down(e.pos, self.moving_tool.transform(), data);
+                self.state = if e.mods.alt() {
+                    EditorState::Moving
                 } else if e.mods.shift() {
-                    self.state = EditorState::BrushSelection;
+                    EditorState::BrushSelection
                 } else if e.mods.ctrl() && e.mods.shift() {
-                    self.state = EditorState::ShapeSelection;
-                    self.shape_sel_tool
-                        .mouse_down(e.pos, self.moving_tool.transform(), data);
+                    EditorState::ShapeSelection
                 } else {
-                    self.state = EditorState::Drawing;
-                    DrawTool::new(self.brush_size)
-                        .mouse_down(e.pos, self.moving_tool.transform(), data);
-                }
+                    EditorState::Drawing
+                };
+
+                let transform = self.moving_tool.transform();
+                let pos = self.mouse_position;
+                self.get_tool().as_mut().mouse_down(pos, transform, data);
             }
             Event::MouseUp(_e) => {
                 ctx.request_focus();
 
-                self.is_mouse_down = false;
+                let transform = self.moving_tool.transform();
+                self.get_tool().as_mut().mouse_up(transform, data);
 
-                match self.state {
-                    EditorState::Drawing => {}
-                    EditorState::Moving => {}
-                    EditorState::ShapeSelection => {
-                        self.shape_sel_tool
-                            .mouse_up(self.moving_tool.transform(), data);
-                    }
-                    EditorState::BrushSelection => {
-                        BrushSelectionTool::new(self.brush_size)
-                            .mouse_up(self.moving_tool.transform(), data);
-                    }
-                }
                 self.state = EditorState::Drawing;
+                self.is_mouse_down = false;
             }
             Event::KeyDown(e) => {
                 ctx.request_paint();

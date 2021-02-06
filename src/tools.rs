@@ -224,6 +224,27 @@ impl Tool for MovingTool {
             }
             _ => ()
         }
+    }
+}
 
+pub(crate) enum ToolRef<'a> {
+    Owned(Box<dyn Tool>),
+    Ref(&'a mut dyn Tool),
+}
+
+impl<'a> ToolRef<'a> {
+    #[allow(unused)]
+    fn as_ref(&'a self) -> &'a dyn Tool {
+        match self {
+            ToolRef::Owned(ref x) => x.as_ref(),
+            ToolRef::Ref(tool) => *tool,
+        }
+    }
+
+    pub(crate) fn as_mut(&'a mut self) -> &'a mut dyn Tool {
+        match self {
+            ToolRef::Owned(ref mut x) => x.as_mut(),
+            ToolRef::Ref(tool) => *tool,
+        }
     }
 }
