@@ -11,7 +11,6 @@ pub struct ImageEditor {
     previous_mouse_position: Point,
     is_mouse_down: bool,
     state: EditorState,
-    brush_size: u32,
     shape_sel_tool: ShapeSelectionTool,
     moving_tool: MovingTool,
 }
@@ -31,7 +30,6 @@ impl ImageEditor {
             previous_mouse_position: Default::default(),
             is_mouse_down: false,
             state: EditorState::Drawing,
-            brush_size: 1,
             shape_sel_tool: ShapeSelectionTool::new(),
             moving_tool: MovingTool::new(),
         }
@@ -39,10 +37,10 @@ impl ImageEditor {
 
     fn get_tool(&mut self, data: &AppData) -> ToolRef {
         match self.state {
-            EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(self.brush_size, [data.brush_color.r, data.brush_color.g, data.brush_color.b, 255]))),
+            EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(data.brush_size, [data.brush_color.r, data.brush_color.g, data.brush_color.b, 255]))),
             EditorState::Moving => ToolRef::Ref(&mut self.moving_tool),
             EditorState::ShapeSelection => ToolRef::Ref(&mut self.shape_sel_tool),
-            EditorState::BrushSelection => ToolRef::Owned(Box::new(BrushSelectionTool::new(self.brush_size))),
+            EditorState::BrushSelection => ToolRef::Owned(Box::new(BrushSelectionTool::new(data.brush_size))),
         }
     }
 }
@@ -98,8 +96,8 @@ impl Widget<AppData> for ImageEditor {
                 ctx.request_paint();
 
                 match e.code {
-                    Code::BracketLeft => self.brush_size -= 1,
-                    Code::BracketRight => self.brush_size += 1,
+                    Code::BracketLeft => data.brush_size -= 1,
+                    Code::BracketRight => data.brush_size += 1,
                     _ => ()
                 }
             }

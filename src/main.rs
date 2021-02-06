@@ -96,6 +96,8 @@ struct AppData {
     dirty: Cell<bool>,
     #[lens(name = "brush_color")]
     brush_color: color_picker::Color,
+    #[lens(name = "brush_size")]
+    brush_size: u32,
 }
 
 impl AppData {
@@ -328,6 +330,7 @@ fn main() {
         ),
         dirty: Cell::new(true),
         brush_color: color_picker::Color::new(),
+        brush_size: 1,
     };
     AppLauncher::with_window(main_window)
         .use_simple_logger()
