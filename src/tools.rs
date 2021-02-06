@@ -6,7 +6,7 @@ use crate::utils::interpolate_points;
 pub(crate) trait Tool {
     fn mouse_move(&mut self, pos: Point, previous_pos: Point, transform: Affine, data: &AppData);
     fn mouse_down(&mut self, pos: Point, transform: Affine, data: &AppData);
-    fn mouse_up(&mut self, data: &AppData);
+    fn mouse_up(&mut self, transform: Affine, data: &AppData);
 }
 
 pub struct DrawTool {
@@ -60,7 +60,7 @@ impl Tool for DrawTool {
         }
     }
 
-    fn mouse_up(&mut self, _data: &AppData) {}
+    fn mouse_up(&mut self, _transform: Affine, _data: &AppData) {}
 }
 
 
@@ -93,7 +93,7 @@ impl Tool for BrushSelectionTool {
 
     fn mouse_down(&mut self, _pos: Point, _transform: Affine, _data: &AppData) {}
 
-    fn mouse_up(&mut self, data: &AppData) {
+    fn mouse_up(&mut self, _transform: Affine, data: &AppData) {
         let mut layer = data.layer_mut(0);
         let (mut sel, mut hot_sel) = layer.data.as_buffer_mut().unwrap().selection_mut();
 
@@ -101,6 +101,49 @@ impl Tool for BrushSelectionTool {
             for x in 0..sel.width() {
                 sel.set(x, y, sel.get(x, y).saturating_add(hot_sel.get(x, y)));
                 hot_sel.set(x, y, 0);
+            }
+        }
+    }
+}
+
+pub(crate) struct ShapeSelectionTool {
+    start_moving_pos: Option<Point>,
+    end_moving_pos: Option<Point>,
+}
+
+impl ShapeSelectionTool {
+    pub(crate) fn new() -> Self {
+        Self {
+            start_moving_pos: None,
+            end_moving_pos: None
+        }
+    }
+}
+
+
+impl Tool for ShapeSelectionTool {
+    fn mouse_move(&mut self, pos: Point, _previous_pos: Point, _transform: Affine, _data: &AppData) {
+        self.end_moving_pos = Some(pos);
+    }
+
+    fn mouse_down(&mut self, pos: Point, _transform: Affine, _data: &AppData) {
+        self.start_moving_pos = Some(pos);
+    }
+
+    fn mouse_up(&mut self, transform: Affine, data: &AppData) {
+        let transform = transform.inverse();
+        let start = transform * self.start_moving_pos.unwrap();
+        let end = transform * self.end_moving_pos.unwrap();
+        let x1 = (start.x.min(end.x)) as u32;
+        let x2 = (start.x.max(end.x)) as u32;
+        let y1 = (start.y.min(end.y)) as u32;
+        let y2 = (start.y.max(end.y)) as u32;
+
+        let mut layer = data.layer_mut(0);
+        let mut v = layer.data.as_buffer_mut().unwrap().channel_mut(ChannelKind::Selection);
+        for y in y1..=y2 {
+            for x in x1..=x2 {
+                v.set(x, y, 255);
             }
         }
     }

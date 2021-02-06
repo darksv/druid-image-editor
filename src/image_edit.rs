@@ -4,8 +4,8 @@ use druid::{Affine, BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCt
 use druid::kurbo::Circle;
 use druid::piet::{InterpolationMode, StrokeStyle};
 
-use crate::{AppData, ChannelKind};
-use crate::tools::{DrawTool, Tool, BrushSelectionTool};
+use crate::AppData;
+use crate::tools::{DrawTool, Tool, BrushSelectionTool, ShapeSelectionTool};
 
 pub struct ImageEditor {
     interpolation: InterpolationMode,
@@ -21,6 +21,7 @@ pub struct ImageEditor {
     start_offset_y: f64,
     end_moving_pos: Point,
     brush_size: u32,
+    shape_sel_tool: ShapeSelectionTool,
 }
 
 enum EditorState {
@@ -46,6 +47,7 @@ impl ImageEditor {
             start_offset_x: 0.0,
             start_offset_y: 0.0,
             brush_size: 1,
+            shape_sel_tool: ShapeSelectionTool::new(),
         }
     }
 
@@ -98,7 +100,8 @@ impl Widget<AppData> for ImageEditor {
                             self.offset_y = e.pos.y - image_pos_y;
                         }
                         EditorState::ShapeSelection => {
-                            self.end_moving_pos = self.mouse_position;
+                            self.shape_sel_tool
+                                .mouse_move(self.mouse_position, self.previous_mouse_position, self.make_transform(), data);
                         }
                         EditorState::BrushSelection => {
                             BrushSelectionTool::new(self.brush_size)
@@ -124,7 +127,7 @@ impl Widget<AppData> for ImageEditor {
                     self.state = EditorState::BrushSelection;
                 } else if e.mods.ctrl() && e.mods.shift() {
                     self.state = EditorState::ShapeSelection;
-                    self.start_moving_pos = e.pos;
+                    self.shape_sel_tool.mouse_down(e.pos, self.make_transform(), data);
                 } else {
                     self.state = EditorState::Drawing;
                     DrawTool::new(self.brush_size)
@@ -140,24 +143,12 @@ impl Widget<AppData> for ImageEditor {
                     EditorState::Drawing => {}
                     EditorState::Moving => {}
                     EditorState::ShapeSelection => {
-                        let transform = self.make_transform().inverse();
-                        let start = transform * self.start_moving_pos;
-                        let end = transform * self.end_moving_pos;
-                        let x1 = (start.x.min(end.x)) as u32;
-                        let x2 = (start.x.max(end.x)) as u32;
-                        let y1 = (start.y.min(end.y)) as u32;
-                        let y2 = (start.y.max(end.y)) as u32;
-
-                        let mut layer = data.layer_mut(0);
-                        let mut v = layer.data.as_buffer_mut().unwrap().channel_mut(ChannelKind::Selection);
-                        for y in y1..=y2 {
-                            for x in x1..=x2 {
-                                v.set(x, y, 255);
-                            }
-                        }
+                        self.shape_sel_tool
+                            .mouse_up(self.make_transform(), data);
                     }
                     EditorState::BrushSelection => {
-                        BrushSelectionTool::new(self.brush_size).mouse_up(data);
+                        BrushSelectionTool::new(self.brush_size)
+                            .mouse_up(self.make_transform(), data);
                     }
                 }
                 self.state = EditorState::Drawing;
