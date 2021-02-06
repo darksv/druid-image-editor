@@ -3,7 +3,7 @@ use std::error::Error;
 use std::fmt;
 use std::path::Path;
 
-use druid::{Affine, Data, PaintCtx, RenderContext, Size, Color};
+use druid::{Affine, Color, Data, PaintCtx, RenderContext, Size};
 use druid::piet::{ImageFormat, InterpolationMode};
 
 use crate::ChannelKind;

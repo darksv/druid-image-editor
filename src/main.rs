@@ -1,17 +1,17 @@
+use std::cell::{Cell, RefCell, RefMut};
+use std::fmt::Formatter;
 use std::sync::Arc;
 
 use druid::{AppLauncher, BoxConstraints, Color, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, LocalizedString, PaintCtx, Size, UnitPoint, UpdateCtx, widget::{Flex, WidgetExt}, Widget, WindowDesc};
 use druid::{Data, Lens};
-use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, Scroll, SizedBox, ListIter};
 use druid::RenderContext;
+use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, ListIter, Scroll, SizedBox};
 
+use crate::channels::Matrix;
+use crate::color_picker::ColorPicker;
 use crate::histogram::Histogram;
 use crate::image_buffer::{ImageBuffer, merge_channels};
 use crate::image_edit::ImageEditor;
-use std::fmt::Formatter;
-use std::cell::{RefCell, RefMut, Cell};
-use crate::channels::Matrix;
-use crate::color_picker::ColorPicker;
 
 mod image_edit;
 mod histogram;
@@ -51,11 +51,8 @@ impl std::fmt::Display for ChannelKind {
 struct Channel {
     name: Option<String>,
     kind: ChannelKind,
-    #[lens(name = "is_visible")]
     is_visible: bool,
-    #[lens(name = "is_selected")]
     is_selected: bool,
-    #[lens(name = "color")]
     color: Color,
 }
 
@@ -88,15 +85,11 @@ impl LayerData {
 
 #[derive(Clone, Debug, Data, Lens)]
 struct AppData {
-    #[lens(name = "channels")]
     channels: Arc<Vec<Channel>>,
-    #[lens(name = "layers")]
     layers: Arc<Vec<RefCell<Layer>>>,
     #[data(ignore)]
     dirty: Cell<bool>,
-    #[lens(name = "brush_color")]
     brush_color: color_picker::Color,
-    #[lens(name = "brush_size")]
     brush_size: u32,
 }
 
