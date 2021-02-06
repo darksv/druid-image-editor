@@ -1,12 +1,14 @@
-use druid::{Point, Affine};
+use druid::{Point, Affine, Modifiers, Vec2};
 use crate::{AppData, ChannelKind};
 use crate::brushes::{BasicBrush, Brush};
 use crate::utils::interpolate_points;
+use std::ops::Neg;
 
 pub(crate) trait Tool {
     fn mouse_move(&mut self, pos: Point, previous_pos: Point, transform: Affine, data: &AppData);
     fn mouse_down(&mut self, pos: Point, transform: Affine, data: &AppData);
     fn mouse_up(&mut self, transform: Affine, data: &AppData);
+    fn wheel(&mut self, pos: Point, delta: Vec2, mods: Modifiers);
 }
 
 pub struct DrawTool {
@@ -61,6 +63,8 @@ impl Tool for DrawTool {
     }
 
     fn mouse_up(&mut self, _transform: Affine, _data: &AppData) {}
+
+    fn wheel(&mut self, _pos: Point, _delta: Vec2, _mods: Modifiers) {}
 }
 
 
@@ -104,18 +108,20 @@ impl Tool for BrushSelectionTool {
             }
         }
     }
+
+    fn wheel(&mut self, _pos: Point, _delta: Vec2, _mods: Modifiers) {}
 }
 
 pub(crate) struct ShapeSelectionTool {
-    start_moving_pos: Option<Point>,
-    end_moving_pos: Option<Point>,
+    pub(crate) start_moving_pos: Option<Point>,
+    pub(crate) end_moving_pos: Option<Point>,
 }
 
 impl ShapeSelectionTool {
     pub(crate) fn new() -> Self {
         Self {
             start_moving_pos: None,
-            end_moving_pos: None
+            end_moving_pos: None,
         }
     }
 }
@@ -146,5 +152,78 @@ impl Tool for ShapeSelectionTool {
                 v.set(x, y, 255);
             }
         }
+    }
+
+    fn wheel(&mut self, _pos: Point, _delta: Vec2, _mods: Modifiers) {}
+}
+
+pub(crate) struct MovingTool {
+    offset_x: f64,
+    offset_y: f64,
+    start_moving_pos: Point,
+    start_offset_x: f64,
+    start_offset_y: f64,
+    scale: f64,
+}
+
+impl MovingTool {
+    pub(crate) fn new() -> Self {
+        Self {
+            offset_x: 0.0,
+            offset_y: 0.0,
+            start_moving_pos: Default::default(),
+            start_offset_x: 0.0,
+            start_offset_y: 0.0,
+            scale: 1.0,
+        }
+    }
+
+    pub(crate) fn transform(&self) -> Affine {
+        Affine::new([self.scale, 0.0, 0.0, self.scale, self.offset_x, self.offset_y])
+    }
+
+    pub(crate) fn scale(&self) -> f64 {
+        self.scale
+    }
+}
+
+impl Tool for MovingTool {
+    fn mouse_move(&mut self, pos: Point, _previous_pos: Point, _transform: Affine, _data: &AppData) {
+        let image_pos_x = self.start_moving_pos.x - self.start_offset_x;
+        let image_pos_y = self.start_moving_pos.y - self.start_offset_y;
+        self.offset_x = pos.x - image_pos_x;
+        self.offset_y = pos.y - image_pos_y;
+    }
+
+    fn mouse_down(&mut self, pos: Point, _transform: Affine, _data: &AppData) {
+        self.start_moving_pos = pos;
+        self.start_offset_x = self.offset_x;
+        self.start_offset_y = self.offset_y;
+    }
+
+    fn mouse_up(&mut self, _transform: Affine, _data: &AppData) {}
+
+    fn wheel(&mut self, pos: Point, delta: Vec2, mods: Modifiers) {
+        match (mods.ctrl(), mods.alt(), mods.shift()) {
+            (true, false, false) => {
+                let new_scale = self.scale * delta.y.neg().signum().exp();
+
+                // From formula:
+                // (cursor_x - old_offset_x) / old_scale =
+                // (cursor_x - new_offset_x) / new_scale
+                // FIXME: cleanup
+                self.offset_x = -(pos.x * new_scale - new_scale * self.offset_x - pos.x * self.scale) / self.scale;
+                self.offset_y = -(pos.y * new_scale - new_scale * self.offset_y - pos.y * self.scale) / self.scale;
+                self.scale = new_scale;
+            }
+            (false, false, false) => {
+                self.offset_y += delta.y.neg();
+            }
+            (false, false, true) => {
+                self.offset_x += delta.y.neg();
+            }
+            _ => ()
+        }
+
     }
 }
