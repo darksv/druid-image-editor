@@ -99,6 +99,21 @@ impl AppData {
         self.layers[index].borrow_mut()
     }
 
+    fn channel(&self, kind: ChannelKind) -> Option<&Channel> {
+        match kind {
+            ChannelKind::Red => self.channels.get(0),
+            ChannelKind::Green => self.channels.get(1),
+            ChannelKind::Blue => self.channels.get(2),
+            ChannelKind::Alpha => self.channels.get(3),
+            ChannelKind::Selection => self.channels.get(4),
+            ChannelKind::HotSelection => self.channels.get(5),
+        }
+    }
+
+    fn is_channel_visible(&self, kind: ChannelKind) -> bool {
+        self.channel(kind).map_or(false, |ch| ch.is_visible)
+    }
+
     fn ensure_fresh(&self) {
         if !self.dirty.get() {
             return;
@@ -113,23 +128,33 @@ impl AppData {
         let s = buff.channel(ChannelKind::Selection);
         let hs = buff.channel(ChannelKind::HotSelection);
 
-        let mut overlay = buff.channel(ChannelKind::Alpha).to_matrix();
-        for y in 0..overlay.height() {
-            for x in 0..overlay.width() {
-                let s = s.get(x, y);
-                let hs = hs.get(x, y);
+        let overlay = if self.is_channel_visible(ChannelKind::Selection) {
+            let mut overlay = buff.channel(ChannelKind::Alpha).to_matrix();
+            for y in 0..overlay.height() {
+                for x in 0..overlay.width() {
+                    let s = s.get(x, y);
+                    let hs = hs.get(x, y);
 
-                match (hs, s) {
-                    (255, _) => overlay.set(x, y, 96),
-                    (_, 255) => overlay.set(x, y, 128),
-                    _ => ()
+                    match (hs, s) {
+                        (255, _) => overlay.set(x, y, 96),
+                        (_, 255) => overlay.set(x, y, 128),
+                        _ => ()
+                    }
                 }
             }
-        }
+            Some(overlay)
+        } else {
+            None
+        };
 
-        let alpha = overlay.as_slice();
+        let alpha = overlay.as_ref().map(|x| x.as_slice()).unwrap_or(a);
         let rgba = &mut *layer.data.as_buffer().unwrap().interleaved.borrow_mut();
-        match (self.channels[0].is_visible, self.channels[1].is_visible, self.channels[2].is_visible, self.channels[3].is_visible) {
+        match (
+            self.is_channel_visible(ChannelKind::Red),
+            self.is_channel_visible(ChannelKind::Green),
+            self.is_channel_visible(ChannelKind::Blue),
+            self.is_channel_visible(ChannelKind::Alpha),
+        ) {
             (true, false, false, false) => merge_channels(r, r, r, alpha, rgba),
             (false, true, false, false) => merge_channels(g, g, g, alpha, rgba),
             (false, false, true, false) => merge_channels(b, b, b, alpha, rgba),
@@ -287,7 +312,6 @@ fn main() {
                 Channel { name: Some("Blue".to_string()), kind: ChannelKind::Blue, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 255) },
                 Channel { name: Some("Alpha".to_string()), kind: ChannelKind::Alpha, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
                 Channel { name: Some("Selection".to_string()), kind: ChannelKind::Selection, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
-                Channel { name: Some("Hot Selection".to_string()), kind: ChannelKind::HotSelection, is_selected: false, is_visible: true, color: Color::rgb8(0, 0, 0) },
             ]),
         layers: Arc::new(
             vec![RefCell::new(Layer {
