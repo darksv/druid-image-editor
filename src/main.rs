@@ -17,6 +17,8 @@ mod contours;
 mod brushes;
 mod image_buffer;
 mod channels;
+mod tools;
+mod utils;
 
 #[derive(Clone, Copy, PartialEq, Eq, Data, Debug)]
 enum ChannelKind {
