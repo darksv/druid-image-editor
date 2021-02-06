@@ -19,6 +19,7 @@ mod image_buffer;
 mod channels;
 mod tools;
 mod utils;
+mod ops;
 
 #[derive(Clone, Copy, PartialEq, Eq, Data, Debug)]
 enum ChannelKind {
