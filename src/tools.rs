@@ -1,10 +1,12 @@
-use druid::{Point, Affine, Modifiers, Vec2, Color, Rect, PaintCtx, RenderContext};
+use std::ops::Neg;
+
+use druid::{Affine, Color, Modifiers, PaintCtx, Point, Rect, RenderContext, Vec2};
+use druid::kurbo::Circle;
+use druid::piet::StrokeStyle;
+
 use crate::{AppData, ChannelKind};
 use crate::brushes::{BasicBrush, Brush};
 use crate::utils::interpolate_points;
-use std::ops::Neg;
-use druid::kurbo::Circle;
-use druid::piet::StrokeStyle;
 
 pub(crate) trait Tool {
     fn mouse_move(&mut self, pos: Point, previous_pos: Point, transform: Affine, data: &AppData);
@@ -16,11 +18,12 @@ pub(crate) trait Tool {
 
 pub struct DrawTool {
     brush_size: u32,
+    color: [u8; 4],
 }
 
 impl DrawTool {
-    pub(crate) fn new(brush_size: u32) -> Self {
-        DrawTool { brush_size }
+    pub(crate) fn new(brush_size: u32, color: [u8; 4]) -> Self {
+        DrawTool { brush_size, color }
     }
 }
 
@@ -31,15 +34,11 @@ impl Tool for DrawTool {
         let end = transform * pos;
 
         for index in 0..4 {
-            if !data.channels[index].is_selected {
-                continue;
-            }
-
             let mut layer = data.layer_mut(0);
             let image = layer.data.as_buffer_mut().unwrap();
             let kind = data.channels[index].kind;
             interpolate_points(begin, end, |p| {
-                BasicBrush::new(self.brush_size).apply(
+                BasicBrush::new(self.brush_size, self.color[index]).apply(
                     image.channel_mut(kind),
                     p.x as u32,
                     p.y as u32,
@@ -53,11 +52,7 @@ impl Tool for DrawTool {
         let p = transform * pos;
 
         for index in 0..4 {
-            if !data.channels[index].is_selected {
-                continue;
-            }
-
-            BasicBrush::new(self.brush_size).apply(
+            BasicBrush::new(self.brush_size, self.color[index]).apply(
                 data.layers[0].borrow_mut().data.as_buffer_mut().unwrap().channel_mut(data.channels[index].kind),
                 p.x as u32,
                 p.y as u32,
@@ -97,7 +92,7 @@ impl Tool for BrushSelectionTool {
         let mut layer = data.layer_mut(0);
         let image = layer.data.as_buffer_mut().unwrap();
         interpolate_points(begin, end, |p| {
-            BasicBrush::new(self.brush_size).apply(
+            BasicBrush::new(self.brush_size, 255).apply(
                 image.channel_mut(ChannelKind::HotSelection),
                 p.x as u32,
                 p.y as u32,

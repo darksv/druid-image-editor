@@ -37,9 +37,9 @@ impl ImageEditor {
         }
     }
 
-    fn get_tool(&mut self) -> ToolRef {
+    fn get_tool(&mut self, data: &AppData) -> ToolRef {
         match self.state {
-            EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(self.brush_size))),
+            EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(self.brush_size, [data.brush_color.r, data.brush_color.g, data.brush_color.b, 255]))),
             EditorState::Moving => ToolRef::Ref(&mut self.moving_tool),
             EditorState::ShapeSelection => ToolRef::Ref(&mut self.shape_sel_tool),
             EditorState::BrushSelection => ToolRef::Owned(Box::new(BrushSelectionTool::new(self.brush_size))),
@@ -60,7 +60,7 @@ impl Widget<AppData> for ImageEditor {
                     let transform = self.moving_tool.transform();
                     let pos = self.mouse_position;
                     let prev_pos = self.previous_mouse_position;
-                    self.get_tool().as_mut().mouse_move(pos, prev_pos, transform, data);
+                    self.get_tool(data).as_mut().mouse_move(pos, prev_pos, transform, data);
                 }
 
                 ctx.set_cursor(&Cursor::OpenHand);
@@ -83,13 +83,13 @@ impl Widget<AppData> for ImageEditor {
 
                 let transform = self.moving_tool.transform();
                 let pos = self.mouse_position;
-                self.get_tool().as_mut().mouse_down(pos, transform, data);
+                self.get_tool(data).as_mut().mouse_down(pos, transform, data);
             }
             Event::MouseUp(_e) => {
                 ctx.request_focus();
 
                 let transform = self.moving_tool.transform();
-                self.get_tool().as_mut().mouse_up(transform, data);
+                self.get_tool(data).as_mut().mouse_up(transform, data);
 
                 self.state = EditorState::Drawing;
                 self.is_mouse_down = false;
@@ -136,7 +136,7 @@ impl Widget<AppData> for ImageEditor {
 
         let pos = self.mouse_position;
         let scale = self.moving_tool.scale();
-        self.get_tool().as_mut().overlay(ctx, pos, scale);
+        self.get_tool(data).as_mut().overlay(ctx, pos, scale);
     }
 }
 

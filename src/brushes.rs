@@ -2,11 +2,12 @@ use crate::channels::ViewMut;
 
 pub(crate) struct BasicBrush {
     size: u32,
+    value: u8,
 }
 
 impl BasicBrush {
-    pub(crate) fn new(size: u32) -> Self {
-        BasicBrush { size }
+    pub(crate) fn new(size: u32, value: u8) -> Self {
+        BasicBrush { size, value }
     }
 }
 
@@ -37,7 +38,7 @@ impl Brush for BasicBrush {
                 let dist = ((x as f64 - x0 as f64).powf(2.0) + (y as f64 - y0 as f64).powf(2.0)).sqrt();
 
                 if dist <= brush_size as f64 / 2.0 {
-                    image.set(x as u32, y as u32, 255);
+                    image.set(x as u32, y as u32, self.value);
                 }
             }
         }
