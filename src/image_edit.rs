@@ -1,10 +1,9 @@
 use druid::{BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCtx, LifeCycle,
-            LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget, Color};
-use druid::kurbo::Circle;
-use druid::piet::{InterpolationMode, StrokeStyle};
+            LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget};
+use druid::piet::InterpolationMode;
 
 use crate::AppData;
-use crate::tools::{DrawTool, Tool, BrushSelectionTool, ShapeSelectionTool, MovingTool, ToolRef};
+use crate::tools::{BrushSelectionTool, DrawTool, MovingTool, ShapeSelectionTool, Tool, ToolRef};
 
 pub struct ImageEditor {
     interpolation: InterpolationMode,
@@ -129,40 +128,15 @@ impl Widget<AppData> for ImageEditor {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppData, _env: &Env) {
-        let s = std::time::Instant::now();
         let transform = self.moving_tool.transform();
-
         let clip_rect = Rect::ZERO.with_size(ctx.size());
         ctx.clip(clip_rect);
-
         data.ensure_fresh();
         data.layers[0].borrow().data.as_buffer().unwrap().to_piet(transform, ctx, self.interpolation);
 
-        match self.state {
-            EditorState::Drawing | EditorState::BrushSelection => {
-                ctx.with_save(|ctx| {
-                    let c = Color::rgb8(90, 100, 20);
-                    ctx.stroke(Circle::new(self.mouse_position, (self.brush_size as f64) / 2.0 * self.moving_tool.scale()), &c, 1.0);
-                });
-            }
-            EditorState::Moving => {}
-            EditorState::ShapeSelection => {
-                ctx.with_save(|ctx| {
-                    let c = Color::rgb8(0, 0, 0);
-                    let mut ss = StrokeStyle::new();
-                    ss.set_dash(vec![3.0, 1.0], 0.0);
-
-                    ctx.stroke_styled(
-                        Rect::from_points(self.shape_sel_tool.start_moving_pos.unwrap(), self.shape_sel_tool.end_moving_pos.unwrap()),
-                        &c,
-                        1.0,
-                        &ss,
-                    );
-                });
-            }
-        }
-
-        dbg!(s.elapsed());
+        let pos = self.mouse_position;
+        let scale = self.moving_tool.scale();
+        self.get_tool().as_mut().overlay(ctx, pos, scale);
     }
 }
 

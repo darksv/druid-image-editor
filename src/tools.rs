@@ -1,14 +1,17 @@
-use druid::{Point, Affine, Modifiers, Vec2};
+use druid::{Point, Affine, Modifiers, Vec2, Color, Rect, PaintCtx, RenderContext};
 use crate::{AppData, ChannelKind};
 use crate::brushes::{BasicBrush, Brush};
 use crate::utils::interpolate_points;
 use std::ops::Neg;
+use druid::kurbo::Circle;
+use druid::piet::StrokeStyle;
 
 pub(crate) trait Tool {
     fn mouse_move(&mut self, pos: Point, previous_pos: Point, transform: Affine, data: &AppData);
     fn mouse_down(&mut self, pos: Point, transform: Affine, data: &AppData);
     fn mouse_up(&mut self, transform: Affine, data: &AppData);
     fn wheel(&mut self, pos: Point, delta: Vec2, mods: Modifiers);
+    fn overlay(&mut self, ctx: &mut PaintCtx, pos: Point, scale: f64);
 }
 
 pub struct DrawTool {
@@ -65,6 +68,13 @@ impl Tool for DrawTool {
     fn mouse_up(&mut self, _transform: Affine, _data: &AppData) {}
 
     fn wheel(&mut self, _pos: Point, _delta: Vec2, _mods: Modifiers) {}
+
+    fn overlay(&mut self, ctx: &mut PaintCtx, pos: Point, scale: f64) {
+        ctx.with_save(|ctx| {
+            let c = Color::rgb8(90, 100, 20);
+            ctx.stroke(Circle::new(pos, (self.brush_size as f64) / 2.0 * scale), &c, 1.0);
+        });
+    }
 }
 
 
@@ -110,6 +120,8 @@ impl Tool for BrushSelectionTool {
     }
 
     fn wheel(&mut self, _pos: Point, _delta: Vec2, _mods: Modifiers) {}
+
+    fn overlay(&mut self, _ctx: &mut PaintCtx, _pos: Point, _scale: f64) {}
 }
 
 pub(crate) struct ShapeSelectionTool {
@@ -155,6 +167,21 @@ impl Tool for ShapeSelectionTool {
     }
 
     fn wheel(&mut self, _pos: Point, _delta: Vec2, _mods: Modifiers) {}
+
+    fn overlay(&mut self, ctx: &mut PaintCtx, _pos: Point, _scale: f64) {
+        ctx.with_save(|ctx| {
+            let c = Color::rgb8(0, 0, 0);
+            let mut ss = StrokeStyle::new();
+            ss.set_dash(vec![3.0, 1.0], 0.0);
+
+            ctx.stroke_styled(
+                Rect::from_points(self.start_moving_pos.unwrap(), self.end_moving_pos.unwrap()),
+                &c,
+                1.0,
+                &ss,
+            );
+        });
+    }
 }
 
 pub(crate) struct MovingTool {
@@ -225,6 +252,8 @@ impl Tool for MovingTool {
             _ => ()
         }
     }
+
+    fn overlay(&mut self, _ctx: &mut PaintCtx, _pos: Point, _scale: f64) {}
 }
 
 pub(crate) enum ToolRef<'a> {
