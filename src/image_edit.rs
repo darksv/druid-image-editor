@@ -5,9 +5,7 @@ use druid::kurbo::Circle;
 use druid::piet::{InterpolationMode, StrokeStyle};
 
 use crate::{AppData, ChannelKind};
-use crate::brushes::{BasicBrush, Brush};
-use crate::tools::{DrawTool, Tool};
-use crate::utils::interpolate_points;
+use crate::tools::{DrawTool, Tool, BrushSelectionTool};
 
 pub struct ImageEditor {
     interpolation: InterpolationMode,
@@ -103,19 +101,8 @@ impl Widget<AppData> for ImageEditor {
                             self.end_moving_pos = self.mouse_position;
                         }
                         EditorState::BrushSelection => {
-                            let transform = self.make_transform().inverse();
-                            let begin = transform * self.previous_mouse_position;
-                            let end = transform * self.mouse_position;
-
-                            let mut layer = data.layer_mut(0);
-                            let image = layer.data.as_buffer_mut().unwrap();
-                            interpolate_points(begin, end, |p| {
-                                BasicBrush::new(self.brush_size).apply(
-                                    image.channel_mut(ChannelKind::HotSelection),
-                                    p.x as u32,
-                                    p.y as u32,
-                                );
-                            });
+                            BrushSelectionTool::new(self.brush_size)
+                                .mouse_move(self.mouse_position, self.previous_mouse_position, self.make_transform(), data);
                         }
                     }
                 }
@@ -170,15 +157,7 @@ impl Widget<AppData> for ImageEditor {
                         }
                     }
                     EditorState::BrushSelection => {
-                        let mut layer = data.layer_mut(0);
-                        let (mut sel, mut hot_sel) = layer.data.as_buffer_mut().unwrap().selection_mut();
-
-                        for y in 0..sel.height() {
-                            for x in 0..sel.width() {
-                                sel.set(x, y, sel.get(x, y).saturating_add(hot_sel.get(x, y)));
-                                hot_sel.set(x, y, 0);
-                            }
-                        }
+                        BrushSelectionTool::new(self.brush_size).mouse_up(data);
                     }
                 }
                 self.state = EditorState::Drawing;
