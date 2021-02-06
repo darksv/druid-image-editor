@@ -10,6 +10,7 @@ use crate::image_buffer::{ImageBuffer, merge_channels};
 use crate::image_edit::ImageEditor;
 use std::fmt::Formatter;
 use std::cell::{RefCell, RefMut, Cell};
+use crate::channels::Matrix;
 
 mod image_edit;
 mod histogram;
@@ -148,19 +149,16 @@ impl AppData {
         };
 
         let alpha = overlay.as_ref().map(|x| x.as_slice()).unwrap_or(a);
+        let zeros = Matrix::new(buff.width(), buff.height());
+        let zeros = zeros.as_slice();
         let rgba = &mut *layer.data.as_buffer().unwrap().interleaved.borrow_mut();
-        match (
-            self.is_channel_visible(ChannelKind::Red),
-            self.is_channel_visible(ChannelKind::Green),
-            self.is_channel_visible(ChannelKind::Blue),
-            self.is_channel_visible(ChannelKind::Alpha),
-        ) {
-            (true, false, false, false) => merge_channels(r, r, r, alpha, rgba),
-            (false, true, false, false) => merge_channels(g, g, g, alpha, rgba),
-            (false, false, true, false) => merge_channels(b, b, b, alpha, rgba),
-            (false, false, false, true) => merge_channels(a, a, a, alpha, rgba),
-            _ => merge_channels(r, g, b, alpha, rgba),
-        }
+        merge_channels(
+            if self.is_channel_visible(ChannelKind::Red) { r } else { zeros },
+            if self.is_channel_visible(ChannelKind::Green) { g } else { zeros },
+            if self.is_channel_visible(ChannelKind::Blue) { b } else { zeros },
+            alpha,
+            rgba,
+        );
 
         self.dirty.set(false);
     }
