@@ -37,10 +37,10 @@ impl ImageEditor {
 
     fn get_tool(&mut self, data: &AppData) -> ToolRef {
         match self.state {
-            EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(data.brush_size, [data.brush_color.r, data.brush_color.g, data.brush_color.b, 255]))),
+            EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(data.brush_size.round() as u32, [data.brush_color.r, data.brush_color.g, data.brush_color.b, 255]))),
             EditorState::Moving => ToolRef::Ref(&mut self.moving_tool),
             EditorState::ShapeSelection => ToolRef::Ref(&mut self.shape_sel_tool),
-            EditorState::BrushSelection => ToolRef::Owned(Box::new(BrushSelectionTool::new(data.brush_size))),
+            EditorState::BrushSelection => ToolRef::Owned(Box::new(BrushSelectionTool::new(data.brush_size.round() as u32))),
         }
     }
 }
@@ -96,8 +96,8 @@ impl Widget<AppData> for ImageEditor {
                 ctx.request_paint();
 
                 match e.code {
-                    Code::BracketLeft => data.brush_size -= 1,
-                    Code::BracketRight => data.brush_size += 1,
+                    Code::BracketLeft => data.brush_size -= 1.0,
+                    Code::BracketRight => data.brush_size += 1.0,
                     _ => ()
                 }
             }

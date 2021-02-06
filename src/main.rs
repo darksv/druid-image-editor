@@ -2,10 +2,12 @@ use std::cell::{Cell, RefCell, RefMut};
 use std::fmt::Formatter;
 use std::sync::Arc;
 
-use druid::{AppLauncher, BoxConstraints, Color, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, LocalizedString, PaintCtx, Size, UnitPoint, UpdateCtx, widget::{Flex, WidgetExt}, Widget, WindowDesc};
+use druid::{AppLauncher, BoxConstraints, Color, Env, Event, EventCtx, LayoutCtx, LifeCycle,
+            LifeCycleCtx, LocalizedString, PaintCtx, Size, UnitPoint, UpdateCtx,
+            widget::{Flex, WidgetExt}, Widget, WindowDesc};
 use druid::{Data, Lens};
 use druid::RenderContext;
-use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, ListIter, Scroll, SizedBox};
+use druid::widget::{Checkbox, FlexParams, Label, LabelText, List, ListIter, Scroll, SizedBox, Slider};
 
 use crate::channels::Matrix;
 use crate::color_picker::ColorPicker;
@@ -90,7 +92,7 @@ struct AppData {
     #[data(ignore)]
     dirty: Cell<bool>,
     brush_color: color_picker::Color,
-    brush_size: u32,
+    brush_size: f64,
 }
 
 impl AppData {
@@ -282,12 +284,19 @@ fn main() {
                 Flex::column()
                     .with_flex_child(
                         SizedBox::new(ColorPicker::new())
-                            .lens(AppData::brush_color), 1.0
+                            .lens(AppData::brush_color), 1.0,
+                    )
+                    .with_flex_child(
+                        SizedBox::new(Slider::new().with_range(0.0, 100.0))
+                            .width(256.0)
+                            .padding(5.0)
+                            .lens(AppData::brush_size)
+                        , 1.0,
                     )
                     .with_flex_child(
                         Scroll::new(List::new(make_channel_item))
                             .vertical()
-                            .lens(AppData::channels),1.0)
+                            .lens(AppData::channels), 1.0)
                     .with_flex_child(
                         SizedBox::new(Histogram {})
                             .width(256.0)
@@ -323,7 +332,7 @@ fn main() {
         ),
         dirty: Cell::new(true),
         brush_color: color_picker::Color::new(),
-        brush_size: 1,
+        brush_size: 1.0,
     };
     AppLauncher::with_window(main_window)
         .use_simple_logger()
