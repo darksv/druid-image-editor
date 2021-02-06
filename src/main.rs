@@ -11,6 +11,7 @@ use crate::image_edit::ImageEditor;
 use std::fmt::Formatter;
 use std::cell::{RefCell, RefMut, Cell};
 use crate::channels::Matrix;
+use crate::color_picker::ColorPicker;
 
 mod image_edit;
 mod histogram;
@@ -21,6 +22,7 @@ mod channels;
 mod tools;
 mod utils;
 mod ops;
+mod color_picker;
 
 #[derive(Clone, Copy, PartialEq, Eq, Data, Debug)]
 enum ChannelKind {
@@ -92,6 +94,8 @@ struct AppData {
     layers: Arc<Vec<RefCell<Layer>>>,
     #[data(ignore)]
     dirty: Cell<bool>,
+    #[lens(name = "brush_color")]
+    brush_color: color_picker::Color,
 }
 
 impl AppData {
@@ -282,10 +286,13 @@ fn main() {
             SizedBox::new(
                 Flex::column()
                     .with_flex_child(
+                        SizedBox::new(ColorPicker::new())
+                            .lens(AppData::brush_color), 1.0
+                    )
+                    .with_flex_child(
                         Scroll::new(List::new(make_channel_item))
                             .vertical()
-                            .lens(AppData::channels)
-                        , 1.0)
+                            .lens(AppData::channels),1.0)
                     .with_flex_child(
                         SizedBox::new(Histogram {})
                             .width(256.0)
@@ -320,6 +327,7 @@ fn main() {
             })]
         ),
         dirty: Cell::new(true),
+        brush_color: color_picker::Color::new(),
     };
     AppLauncher::with_window(main_window)
         .use_simple_logger()
