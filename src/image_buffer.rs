@@ -6,8 +6,8 @@ use std::path::Path;
 use druid::{Affine, Color, Data, PaintCtx, RenderContext, Size};
 use druid::piet::{ImageFormat, InterpolationMode};
 
-use crate::ChannelKind;
 use crate::channels::{Matrix, View, ViewMut};
+use crate::state::ChannelKind;
 
 /// Stored Image data.
 #[derive(Clone, Data)]

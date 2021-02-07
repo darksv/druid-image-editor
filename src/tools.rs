@@ -4,8 +4,8 @@ use druid::{Affine, Color, Modifiers, PaintCtx, Point, Rect, RenderContext, Vec2
 use druid::kurbo::Circle;
 use druid::piet::StrokeStyle;
 
-use crate::{AppData, ChannelKind};
 use crate::brushes::{BasicBrush, Brush};
+use crate::state::{AppData, ChannelKind};
 use crate::utils::interpolate_points;
 
 pub(crate) trait Tool {

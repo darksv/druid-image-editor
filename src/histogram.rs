@@ -1,8 +1,8 @@
 use druid::{BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget};
 use druid::piet::{ImageFormat, InterpolationMode};
 
-use crate::{AppData, ChannelKind};
 use crate::image_buffer::ImageBuffer;
+use crate::state::{AppData, ChannelKind};
 
 pub struct Histogram {}
 

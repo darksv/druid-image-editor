@@ -2,7 +2,7 @@ use druid::{BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCtx, LifeC
             LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget};
 use druid::piet::InterpolationMode;
 
-use crate::AppData;
+use crate::state::AppData;
 use crate::tools::{BrushSelectionTool, DrawTool, MovingTool, ShapeSelectionTool, Tool, ToolRef};
 
 pub struct ImageEditor {
