@@ -27,28 +27,32 @@ impl Widget<AppData> for Histogram {
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppData, _env: &Env) {
         fn make_image_data(image: &ImageBuffer, width: usize, height: usize) -> Vec<u8> {
+            let mut normalized = [[0u8; 256]; 3];
+
+            for channel in std::array::IntoIter::new([
+                ChannelKind::Red,
+                ChannelKind::Green,
+                ChannelKind::Blue
+            ]) {
+                let mut histogram = [0u32; 256];
+                for value in image.channel(channel).as_slice().unwrap().iter().copied() {
+                    histogram[value as usize] += 1;
+                }
+
+                let max_count: usize = histogram.iter().map(|it| *it as usize).max().unwrap();
+                for value in 0..256 {
+                    normalized[channel as usize][value] = (histogram[value] as usize * 256 / max_count) as u8;
+                }
+            }
+
             let mut result = vec![0; width * height * 4];
-            let mut hist = [0u32; 256];
-
-            for p in image.channel(ChannelKind::Red).as_slice().unwrap().iter() {
-                hist[*p as usize] += 1;
-            }
-
-            let sum: usize = hist.iter().map(|it| *it as usize).max().unwrap();
-            let mut normalized = [0u8; 256];
-            for i in 0..256 {
-                normalized[i] = (hist[i] as usize * 256 / sum) as u8;
-            }
-
             for y in 0..height {
                 for x in 0..width {
-                    let c = if (255-normalized[x]) / 2 > y as u8 { 0 } else { 255 };
-
                     let ix = (y * width + x) * 4;
-                    result[ix + 0] = c;
-                    result[ix + 1] = c;
-                    result[ix + 2] = c;
-                    result[ix + 3] = c;
+                    result[ix + 0] = if (255 - normalized[0][x]) / 2 > y as u8 { 0 } else { 255 };
+                    result[ix + 1] = if (255 - normalized[1][x]) / 2 > y as u8 { 0 } else { 255 };
+                    result[ix + 2] = if (255 - normalized[2][x]) / 2 > y as u8 { 0 } else { 255 };
+                    result[ix + 3] = 255;
                 }
             }
             result
