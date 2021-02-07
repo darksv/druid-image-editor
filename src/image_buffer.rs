@@ -58,6 +58,10 @@ impl ImageBuffer {
 
     #[allow(unused)]
     pub(crate) fn height(&self) -> u32 { self.height }
+
+    pub(crate) fn size(&self) -> (u32, u32) {
+        (self.width, self.height)
+    }
 }
 
 impl fmt::Debug for ImageBuffer {

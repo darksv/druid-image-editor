@@ -1,9 +1,11 @@
-use druid::{BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCtx, LifeCycle,
-            LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget};
+use druid::{BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+            PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget};
 use druid::piet::InterpolationMode;
+use druid::widget::Viewport;
 
 use crate::state::AppData;
 use crate::tools::{BrushSelectionTool, DrawTool, MovingTool, ShapeSelectionTool, Tool, ToolRef};
+use druid::scroll_component::ScrollComponent;
 
 pub struct ImageEditor {
     interpolation: InterpolationMode,
@@ -13,6 +15,7 @@ pub struct ImageEditor {
     state: EditorState,
     shape_sel_tool: ShapeSelectionTool,
     moving_tool: MovingTool,
+    scroll_component: ScrollComponent,
 }
 
 enum EditorState {
@@ -32,6 +35,7 @@ impl ImageEditor {
             state: EditorState::Drawing,
             shape_sel_tool: ShapeSelectionTool::new(),
             moving_tool: MovingTool::new(),
+            scroll_component: ScrollComponent::new()
         }
     }
 
@@ -43,10 +47,31 @@ impl ImageEditor {
             EditorState::BrushSelection => ToolRef::Owned(Box::new(BrushSelectionTool::new(data.brush_size.round() as u32))),
         }
     }
+
+    fn viewport(&self, data: &AppData, size: Size) -> Viewport {
+        let (width, height) = data.layers[0].borrow().data.as_buffer().unwrap().size();
+        let content_size = Size::new(width as f64, height as f64);
+
+        Viewport {
+            content_size,
+            rect: Rect::from_origin_size(
+                (-self.moving_tool.offset_x, -self.moving_tool.offset_y),
+                size
+            )
+        }
+    }
 }
 
 impl Widget<AppData> for ImageEditor {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut AppData, _env: &Env) {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut AppData, env: &Env) {
+        let mut port = self.viewport(data, ctx.size());
+        self.scroll_component.event(&mut port, ctx, event, env);
+        if ctx.is_handled() {
+            self.moving_tool.offset_x = -port.rect.origin().x;
+            self.moving_tool.offset_y = -port.rect.origin().y;
+            return;
+        }
+
         match event {
             Event::MouseMove(e) => {
                 ctx.request_focus();
@@ -116,7 +141,7 @@ impl Widget<AppData> for ImageEditor {
 
     fn layout(
         &mut self,
-        _layout_ctx: &mut LayoutCtx,
+        _ctx: &mut LayoutCtx,
         bc: &BoxConstraints,
         _data: &AppData,
         _env: &Env,
@@ -125,7 +150,7 @@ impl Widget<AppData> for ImageEditor {
         bc.max()
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &AppData, _env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &AppData, env: &Env) {
         let transform = self.moving_tool.transform();
         let clip_rect = Rect::ZERO.with_size(ctx.size());
         ctx.clip(clip_rect);
@@ -135,6 +160,8 @@ impl Widget<AppData> for ImageEditor {
         let pos = self.mouse_position;
         let scale = self.moving_tool.scale();
         self.get_tool(data).as_mut().overlay(ctx, pos, scale);
+
+        self.scroll_component.draw_bars(ctx, &self.viewport(data, ctx.size()), env);
     }
 }
 

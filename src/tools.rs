@@ -180,8 +180,8 @@ impl Tool for ShapeSelectionTool {
 }
 
 pub(crate) struct MovingTool {
-    offset_x: f64,
-    offset_y: f64,
+    pub(crate) offset_x: f64,
+    pub(crate) offset_y: f64,
     start_moving_pos: Point,
     start_offset_x: f64,
     start_offset_y: f64,
