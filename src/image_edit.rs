@@ -96,10 +96,10 @@ impl Widget<AppData> for ImageEditor {
                 self.is_mouse_down = true;
                 self.state = if e.mods.alt() {
                     EditorState::Moving
-                } else if e.mods.shift() {
-                    EditorState::BrushSelection
                 } else if e.mods.ctrl() && e.mods.shift() {
                     EditorState::ShapeSelection
+                } else if e.mods.shift() {
+                    EditorState::BrushSelection
                 } else {
                     EditorState::Drawing
                 };
