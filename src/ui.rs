@@ -17,7 +17,7 @@ fn make_channel_item() -> impl Widget<Channel> {
                 .on_click(|_ctx, data: &mut Channel, _| data.is_selected ^= true)
         )
         .with_flex_child(
-            Label::new(|item: &Channel, _env: &_| item.name.as_ref().cloned().unwrap_or(item.kind.to_string()))
+            Label::new(|item: &Channel, _env: &_| item.name.as_ref().cloned().unwrap_or_else(|| item.kind.to_string()))
                 .align_vertical(UnitPoint::LEFT)
                 .expand().height(42.0)
             , 1.0)

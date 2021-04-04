@@ -1,3 +1,6 @@
+#![allow(clippy::collapsible_else_if)]
+#![allow(clippy::identity_op)]
+#![allow(clippy::many_single_char_names)]
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 

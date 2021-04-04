@@ -40,6 +40,7 @@ impl Widget<AppData> for Histogram {
                 }
 
                 let max_count: usize = histogram.iter().map(|it| *it as usize).max().unwrap();
+                #[allow(clippy::needless_range_loop)]
                 for value in 0..256 {
                     normalized[channel as usize][value] = (histogram[value] as usize * 256 / max_count) as u8;
                 }
