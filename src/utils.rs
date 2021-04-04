@@ -61,7 +61,11 @@ mod bresenham {
 }
 
 pub(crate) fn interpolate_points(begin: Point, end: Point, mut f: impl FnMut(Point)) {
-    let (begin, end) = if begin.x < end.x { (begin, end) } else { (end, begin) };
+    let (begin, end) = if begin.x < end.x {
+        (begin, end)
+    } else {
+        (end, begin)
+    };
 
     let x0 = begin.x as i32;
     let y0 = begin.y as i32;

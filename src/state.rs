@@ -6,7 +6,7 @@ use druid::{Color, Data, Lens};
 
 use crate::channels::Matrix;
 use crate::color_picker;
-use crate::image_buffer::{ImageBuffer, merge_channels};
+use crate::image_buffer::{merge_channels, ImageBuffer};
 
 #[derive(Clone, Copy, PartialEq, Eq, Data, Debug)]
 pub(crate) enum ChannelKind {
@@ -20,14 +20,18 @@ pub(crate) enum ChannelKind {
 
 impl std::fmt::Display for ChannelKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            ChannelKind::Red => "Red",
-            ChannelKind::Green => "Green",
-            ChannelKind::Blue => "Blue",
-            ChannelKind::Alpha => "Alpha",
-            ChannelKind::Selection => "Selection",
-            ChannelKind::HotSelection => "Hot Selection",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                ChannelKind::Red => "Red",
+                ChannelKind::Green => "Green",
+                ChannelKind::Blue => "Blue",
+                ChannelKind::Alpha => "Alpha",
+                ChannelKind::Selection => "Selection",
+                ChannelKind::HotSelection => "Hot Selection",
+            }
+        )
     }
 }
 
@@ -122,7 +126,7 @@ impl AppData {
                     match (hs, s) {
                         (255, _) => overlay.set(x, y, 96),
                         (_, 255) => overlay.set(x, y, 128),
-                        _ => ()
+                        _ => (),
                     }
                 }
             }
@@ -135,6 +139,7 @@ impl AppData {
         let zeros = Matrix::new(buff.width(), buff.height());
         let zeros = zeros.as_slice();
         let rgba = &mut *layer.data.as_buffer().unwrap().interleaved.borrow_mut();
+        #[rustfmt::skip]
         merge_channels(
             if self.is_channel_visible(ChannelKind::Red) { r } else { zeros },
             if self.is_channel_visible(ChannelKind::Green) { g } else { zeros },

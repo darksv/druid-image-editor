@@ -11,7 +11,6 @@ impl BasicBrush {
     }
 }
 
-
 pub(crate) trait Brush {
     fn apply(&self, image: ViewMut<'_, u8>, x: u32, y: u32);
 }
@@ -35,7 +34,9 @@ impl Brush for BasicBrush {
                     continue;
                 }
 
-                let dist = ((x as f64 - x0 as f64).powf(2.0) + (y as f64 - y0 as f64).powf(2.0)).sqrt();
+                let x_squared = (x as f64 - x0 as f64).powf(2.0);
+                let y_squared = (y as f64 - y0 as f64).powf(2.0);
+                let dist = (x_squared + y_squared).sqrt();
 
                 if dist <= brush_size as f64 / 2.0 {
                     image.set(x as u32, y as u32, self.value);

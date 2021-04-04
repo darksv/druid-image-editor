@@ -7,7 +7,9 @@ pub(crate) struct Matrix<T> {
 
 impl<T> Matrix<T> {
     pub(crate) fn new(width: u32, height: u32) -> Self
-        where T: Default + Copy {
+    where
+        T: Default + Copy,
+    {
         Matrix {
             width,
             height,
@@ -16,18 +18,28 @@ impl<T> Matrix<T> {
     }
 
     #[inline]
-    pub(crate) fn width(&self) -> u32 { self.width }
+    pub(crate) fn width(&self) -> u32 {
+        self.width
+    }
     #[inline]
-    pub(crate) fn height(&self) -> u32 { self.height }
+    pub(crate) fn height(&self) -> u32 {
+        self.height
+    }
 
     #[inline]
     #[allow(unused)]
-    pub(crate) fn get(&self, x: u32, y: u32) -> T where T: Copy {
+    pub(crate) fn get(&self, x: u32, y: u32) -> T
+    where
+        T: Copy,
+    {
         self.data[y as usize * self.width as usize + x as usize]
     }
 
     #[inline]
-    pub(crate) fn set(&mut self, x: u32, y: u32, value: T) where T: Copy {
+    pub(crate) fn set(&mut self, x: u32, y: u32, value: T)
+    where
+        T: Copy,
+    {
         self.data[y as usize * self.width as usize + x as usize] = value;
     }
 
@@ -95,17 +107,30 @@ pub(crate) struct View<'a, T> {
 impl<'a, T> View<'a, T> {
     #[allow(unused)]
     pub(crate) fn new(buffer: &'a [T], x: u32, y: u32, width: u32, height: u32) -> Self {
-        View { buffer, x, y, width, height }
+        View {
+            buffer,
+            x,
+            y,
+            width,
+            height,
+        }
     }
 
     #[inline]
-    pub(crate) fn width(&self) -> u32 { self.width }
+    pub(crate) fn width(&self) -> u32 {
+        self.width
+    }
 
     #[inline]
-    pub(crate) fn height(&self) -> u32 { self.height }
+    pub(crate) fn height(&self) -> u32 {
+        self.height
+    }
 
     #[inline]
-    pub(crate) fn get(&self, x: u32, y: u32) -> T where T: Copy {
+    pub(crate) fn get(&self, x: u32, y: u32) -> T
+    where
+        T: Copy,
+    {
         self.buffer[(self.y + y) as usize * self.width as usize + (self.x + x) as usize]
     }
 
@@ -118,9 +143,14 @@ impl<'a, T> View<'a, T> {
         }
     }
 
-    pub(crate) fn to_matrix(&self) -> Matrix<T> where T: Copy + Default {
+    pub(crate) fn to_matrix(&self) -> Matrix<T>
+    where
+        T: Copy + Default,
+    {
         let mut matrix = Matrix::new(self.width, self.height);
-        matrix.as_slice_mut().copy_from_slice(self.as_slice().expect("whole buffer view"));
+        matrix
+            .as_slice_mut()
+            .copy_from_slice(self.as_slice().expect("whole buffer view"));
         matrix
     }
 }
@@ -136,22 +166,38 @@ pub(crate) struct ViewMut<'a, T> {
 impl<'a, T> ViewMut<'a, T> {
     #[allow(unused)]
     pub(crate) fn new(buffer: &'a mut [T], x: u32, y: u32, width: u32, height: u32) -> Self {
-        ViewMut { buffer, x, y, width, height }
+        ViewMut {
+            buffer,
+            x,
+            y,
+            width,
+            height,
+        }
     }
 
     #[inline]
-    pub(crate) fn width(&self) -> u32 { self.width }
+    pub(crate) fn width(&self) -> u32 {
+        self.width
+    }
 
     #[inline]
-    pub(crate) fn height(&self) -> u32 { self.height }
+    pub(crate) fn height(&self) -> u32 {
+        self.height
+    }
 
     #[inline]
-    pub(crate) fn get(&self, x: u32, y: u32) -> T where T: Copy {
+    pub(crate) fn get(&self, x: u32, y: u32) -> T
+    where
+        T: Copy,
+    {
         self.buffer[(self.y + y) as usize * self.width as usize + (self.x + x) as usize]
     }
 
     #[inline]
-    pub(crate) fn set(&mut self, x: u32, y: u32, value: T) where T: Copy {
+    pub(crate) fn set(&mut self, x: u32, y: u32, value: T)
+    where
+        T: Copy,
+    {
         self.buffer[(self.y + y) as usize * self.width as usize + (self.x + x) as usize] = value;
     }
 }

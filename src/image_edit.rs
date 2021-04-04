@@ -1,7 +1,9 @@
-use druid::{BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-            PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget};
 use druid::piet::InterpolationMode;
 use druid::widget::Viewport;
+use druid::{
+    BoxConstraints, Code, Cursor, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, Point, Rect, RenderContext, Size, UpdateCtx, Widget,
+};
 
 use crate::state::AppData;
 use crate::tools::{BrushSelectionTool, DrawTool, MovingTool, ShapeSelectionTool, Tool, ToolRef};
@@ -35,16 +37,26 @@ impl ImageEditor {
             state: EditorState::Drawing,
             shape_sel_tool: ShapeSelectionTool::new(),
             moving_tool: MovingTool::new(),
-            scroll_component: ScrollComponent::new()
+            scroll_component: ScrollComponent::new(),
         }
     }
 
     fn get_tool(&mut self, data: &AppData) -> ToolRef {
         match self.state {
-            EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(data.brush_size.round() as u32, [data.brush_color.r, data.brush_color.g, data.brush_color.b, 255]))),
+            EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(
+                data.brush_size.round() as u32,
+                [
+                    data.brush_color.r,
+                    data.brush_color.g,
+                    data.brush_color.b,
+                    255,
+                ],
+            ))),
             EditorState::Moving => ToolRef::Ref(&mut self.moving_tool),
             EditorState::ShapeSelection => ToolRef::Ref(&mut self.shape_sel_tool),
-            EditorState::BrushSelection => ToolRef::Owned(Box::new(BrushSelectionTool::new(data.brush_size.round() as u32))),
+            EditorState::BrushSelection => ToolRef::Owned(Box::new(BrushSelectionTool::new(
+                data.brush_size.round() as u32,
+            ))),
         }
     }
 
@@ -56,8 +68,8 @@ impl ImageEditor {
             content_size,
             rect: Rect::from_origin_size(
                 (-self.moving_tool.offset_x, -self.moving_tool.offset_y),
-                size
-            )
+                size,
+            ),
         }
     }
 }
@@ -83,7 +95,9 @@ impl Widget<AppData> for ImageEditor {
                     let transform = self.moving_tool.transform();
                     let pos = self.mouse_position;
                     let prev_pos = self.previous_mouse_position;
-                    self.get_tool(data).as_mut().mouse_move(pos, prev_pos, transform, data);
+                    self.get_tool(data)
+                        .as_mut()
+                        .mouse_move(pos, prev_pos, transform, data);
                 }
 
                 ctx.set_cursor(&Cursor::Arrow);
@@ -106,7 +120,9 @@ impl Widget<AppData> for ImageEditor {
 
                 let transform = self.moving_tool.transform();
                 let pos = self.mouse_position;
-                self.get_tool(data).as_mut().mouse_down(pos, transform, data);
+                self.get_tool(data)
+                    .as_mut()
+                    .mouse_down(pos, transform, data);
             }
             Event::MouseUp(_e) => {
                 ctx.request_focus();
@@ -123,7 +139,7 @@ impl Widget<AppData> for ImageEditor {
                 match e.code {
                     Code::BracketLeft => data.brush_size -= 1.0,
                     Code::BracketRight => data.brush_size += 1.0,
-                    _ => ()
+                    _ => (),
                 }
             }
             Event::Wheel(e) => {
@@ -135,7 +151,14 @@ impl Widget<AppData> for ImageEditor {
         }
     }
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &AppData, _env: &Env) {}
+    fn lifecycle(
+        &mut self,
+        _ctx: &mut LifeCycleCtx,
+        _event: &LifeCycle,
+        _data: &AppData,
+        _env: &Env,
+    ) {
+    }
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppData, _data: &AppData, _env: &Env) {}
 
@@ -155,13 +178,17 @@ impl Widget<AppData> for ImageEditor {
         let clip_rect = Rect::ZERO.with_size(ctx.size());
         ctx.clip(clip_rect);
         data.ensure_fresh();
-        data.layers[0].borrow().data.as_buffer().unwrap().to_piet(transform, ctx, self.interpolation);
+        data.layers[0].borrow().data.as_buffer().unwrap().to_piet(
+            transform,
+            ctx,
+            self.interpolation,
+        );
 
         let pos = self.mouse_position;
         let scale = self.moving_tool.scale();
         self.get_tool(data).as_mut().overlay(ctx, pos, scale);
 
-        self.scroll_component.draw_bars(ctx, &self.viewport(data, ctx.size()), env);
+        self.scroll_component
+            .draw_bars(ctx, &self.viewport(data, ctx.size()), env);
     }
 }
-

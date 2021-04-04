@@ -1,6 +1,8 @@
-use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-            Point, Rect, RenderContext, Size, UpdateCtx, Widget, WidgetExt, WidgetPod};
 use druid::widget::{Padding, Slider};
+use druid::{
+    BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, Rect, RenderContext, Size, UpdateCtx, Widget, WidgetExt, WidgetPod,
+};
 
 pub(crate) struct ColorPicker {
     red: WidgetPod<f64, Padding<f64, Slider>>,
@@ -27,11 +29,7 @@ pub(crate) struct Color {
 
 impl Color {
     pub(crate) fn new() -> Self {
-        Self {
-            r: 0,
-            g: 0,
-            b: 0,
-        }
+        Self { r: 0, g: 0, b: 0 }
     }
 }
 
@@ -74,16 +72,33 @@ impl Widget<Color> for ColorPicker {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &Color, env: &Env) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        bc: &BoxConstraints,
+        _data: &Color,
+        env: &Env,
+    ) -> Size {
         let rect_height = 20.0;
 
         let bc = BoxConstraints::new(Size::new(bc.max().width, bc.min().height), bc.max());
         let red_size = self.red.layout(ctx, &bc, &0.0, env);
         let green_size = self.green.layout(ctx, &bc, &0.0, env);
         let blue_size = self.blue.layout(ctx, &bc, &0.0, env);
-        self.red.set_origin(ctx, &1.0, env, Point::new(0.0, rect_height));
-        self.green.set_origin(ctx, &1.0, env, Point::new(0.0, rect_height + red_size.height));
-        self.blue.set_origin(ctx, &1.0, env, Point::new(0.0, rect_height + red_size.height + green_size.height));
+        self.red
+            .set_origin(ctx, &1.0, env, Point::new(0.0, rect_height));
+        self.green.set_origin(
+            ctx,
+            &1.0,
+            env,
+            Point::new(0.0, rect_height + red_size.height),
+        );
+        self.blue.set_origin(
+            ctx,
+            &1.0,
+            env,
+            Point::new(0.0, rect_height + red_size.height + green_size.height),
+        );
         Size::new(
             red_size.width,
             red_size.height + green_size.height + blue_size.height + rect_height,

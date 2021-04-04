@@ -1,8 +1,8 @@
 use std::ops::Neg;
 
-use druid::{Affine, Color, Modifiers, PaintCtx, Point, Rect, RenderContext, Vec2};
 use druid::kurbo::Circle;
 use druid::piet::StrokeStyle;
+use druid::{Affine, Color, Modifiers, PaintCtx, Point, Rect, RenderContext, Vec2};
 
 use crate::brushes::{BasicBrush, Brush};
 use crate::state::{AppData, ChannelKind};
@@ -53,7 +53,12 @@ impl Tool for DrawTool {
 
         for index in 0..4 {
             BasicBrush::new(self.brush_size, self.color[index]).apply(
-                data.layers[0].borrow_mut().data.as_buffer_mut().unwrap().channel_mut(data.channels[index].kind),
+                data.layers[0]
+                    .borrow_mut()
+                    .data
+                    .as_buffer_mut()
+                    .unwrap()
+                    .channel_mut(data.channels[index].kind),
                 p.x as u32,
                 p.y as u32,
             );
@@ -67,11 +72,14 @@ impl Tool for DrawTool {
     fn overlay(&mut self, ctx: &mut PaintCtx, pos: Point, scale: f64) {
         ctx.with_save(|ctx| {
             let c = Color::rgb8(90, 100, 20);
-            ctx.stroke(Circle::new(pos, (self.brush_size as f64) / 2.0 * scale), &c, 1.0);
+            ctx.stroke(
+                Circle::new(pos, (self.brush_size as f64) / 2.0 * scale),
+                &c,
+                1.0,
+            );
         });
     }
 }
-
 
 pub(crate) struct BrushSelectionTool {
     brush_size: u32,
@@ -133,9 +141,14 @@ impl ShapeSelectionTool {
     }
 }
 
-
 impl Tool for ShapeSelectionTool {
-    fn mouse_move(&mut self, pos: Point, _previous_pos: Point, _transform: Affine, _data: &AppData) {
+    fn mouse_move(
+        &mut self,
+        pos: Point,
+        _previous_pos: Point,
+        _transform: Affine,
+        _data: &AppData,
+    ) {
         self.end_moving_pos = Some(pos);
     }
 
@@ -153,7 +166,11 @@ impl Tool for ShapeSelectionTool {
         let y2 = (start.y.max(end.y)) as u32;
 
         let mut layer = data.layer_mut(0);
-        let mut v = layer.data.as_buffer_mut().unwrap().channel_mut(ChannelKind::Selection);
+        let mut v = layer
+            .data
+            .as_buffer_mut()
+            .unwrap()
+            .channel_mut(ChannelKind::Selection);
         for y in y1..=y2 {
             for x in x1..=x2 {
                 v.set(x, y, 255);
@@ -202,7 +219,14 @@ impl MovingTool {
     }
 
     pub(crate) fn transform(&self) -> Affine {
-        Affine::new([self.scale, 0.0, 0.0, self.scale, self.offset_x, self.offset_y])
+        Affine::new([
+            self.scale,
+            0.0,
+            0.0,
+            self.scale,
+            self.offset_x,
+            self.offset_y,
+        ])
     }
 
     pub(crate) fn scale(&self) -> f64 {
@@ -211,7 +235,13 @@ impl MovingTool {
 }
 
 impl Tool for MovingTool {
-    fn mouse_move(&mut self, pos: Point, _previous_pos: Point, _transform: Affine, _data: &AppData) {
+    fn mouse_move(
+        &mut self,
+        pos: Point,
+        _previous_pos: Point,
+        _transform: Affine,
+        _data: &AppData,
+    ) {
         let image_pos_x = self.start_moving_pos.x - self.start_offset_x;
         let image_pos_y = self.start_moving_pos.y - self.start_offset_y;
         self.offset_x = pos.x - image_pos_x;
@@ -235,8 +265,12 @@ impl Tool for MovingTool {
                 // (cursor_x - old_offset_x) / old_scale =
                 // (cursor_x - new_offset_x) / new_scale
                 // FIXME: cleanup
-                self.offset_x = -(pos.x * new_scale - new_scale * self.offset_x - pos.x * self.scale) / self.scale;
-                self.offset_y = -(pos.y * new_scale - new_scale * self.offset_y - pos.y * self.scale) / self.scale;
+                self.offset_x =
+                    -(pos.x * new_scale - new_scale * self.offset_x - pos.x * self.scale)
+                        / self.scale;
+                self.offset_y =
+                    -(pos.y * new_scale - new_scale * self.offset_y - pos.y * self.scale)
+                        / self.scale;
                 self.scale = new_scale;
             }
             (false, false, false) => {
@@ -245,7 +279,7 @@ impl Tool for MovingTool {
             (false, false, true) => {
                 self.offset_x += delta.y.neg();
             }
-            _ => ()
+            _ => (),
         }
     }
 

@@ -29,7 +29,6 @@ enum BorderType {
     Hole,
 }
 
-
 #[allow(unused)]
 fn trace_border(
     start: Point<u32>,
@@ -53,7 +52,10 @@ fn trace_border(
             Point::new(current.x + 1, current.y + 1),
         ];
 
-        let start_position = neighbours_counterclockwise.iter().position(|x| x == &previous).unwrap();
+        let start_position = neighbours_counterclockwise
+            .iter()
+            .position(|x| x == &previous)
+            .unwrap();
 
         let mut examined_with_zeros = [false; 8];
         let mut first_nonzero = None;
@@ -85,7 +87,6 @@ fn trace_border(
         current = next;
     }
 }
-
 
 // pub(crate) fn find_contours2(
 //     source: View<'_, u8>,
@@ -211,9 +212,7 @@ fn trace_border(
 // }
 
 #[allow(unused)]
-pub(crate) fn find_contours(
-    source: View<'_, u8>,
-) -> Vec<Contour> {
+pub(crate) fn find_contours(source: View<'_, u8>) -> Vec<Contour> {
     let s = std::time::Instant::now();
 
     // some kind of 1 pixel border is required to avoid out of area access
@@ -252,10 +251,13 @@ pub(crate) fn find_contours(
                     Point::new(x - 1, y),
                     Point::new(x - 1, y - 1),
                     Point::new(x, y - 1),
-                    Point::new(x + 1, y - 1)
+                    Point::new(x + 1, y - 1),
                 ];
 
-                let start = neighbours_clockwise.iter().position(|it| it == &i2j2).unwrap();
+                let start = neighbours_clockwise
+                    .iter()
+                    .position(|it| it == &i2j2)
+                    .unwrap();
                 let first_nonzero = (0..8).find_map(|offset| {
                     let Point { x: j, y: i } = neighbours_clockwise[(offset + start) % 8];
                     if mat.get(j, i) != 0 {
@@ -270,7 +272,7 @@ pub(crate) fn find_contours(
                 match first_nonzero {
                     Some(i1j1) => {
                         trace_border(Point::new(x, y), i1j1, &mut mat, |point, examined, mat| {
-                            points.push(Point::new(point.x - 1+1, point.y - 1+1));
+                            points.push(Point::new(point.x - 1 + 1, point.y - 1 + 1));
                             // dbg!(point.x, point.y);
                             // (3.4)
                             if examined && mat.get(point.x + 1, point.y) == 0 {
@@ -284,7 +286,7 @@ pub(crate) fn find_contours(
                     }
                     None => {
                         // got single pixel
-                        points.push(Point::new(x - 1+1, y - 1+1));
+                        points.push(Point::new(x - 1 + 1, y - 1 + 1));
                         mat.set(x, y, -2);
                     }
                 }
@@ -299,10 +301,9 @@ pub(crate) fn find_contours(
             }
         }
     }
-dbg!(s.elapsed());
+    dbg!(s.elapsed());
     contours
 }
-
 
 //
 // #[cfg(test)]

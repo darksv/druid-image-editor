@@ -3,8 +3,8 @@ use std::error::Error;
 use std::fmt;
 use std::path::Path;
 
-use druid::{Affine, Color, Data, PaintCtx, RenderContext, Size};
 use druid::piet::{ImageFormat, InterpolationMode};
+use druid::{Affine, Color, Data, PaintCtx, RenderContext, Size};
 
 use crate::channels::{Matrix, View, ViewMut};
 use crate::state::ChannelKind;
@@ -48,16 +48,23 @@ impl ImageBuffer {
             ChannelKind::HotSelection => self.hot_selection.as_view_mut(),
         }
     }
-    
+
     pub(crate) fn selection_mut(&mut self) -> (ViewMut<'_, u8>, ViewMut<'_, u8>) {
-        (self.selection.as_view_mut(), self.hot_selection.as_view_mut())
+        (
+            self.selection.as_view_mut(),
+            self.hot_selection.as_view_mut(),
+        )
     }
 
     #[allow(unused)]
-    pub(crate) fn width(&self) -> u32 { self.width }
+    pub(crate) fn width(&self) -> u32 {
+        self.width
+    }
 
     #[allow(unused)]
-    pub(crate) fn height(&self) -> u32 { self.height }
+    pub(crate) fn height(&self) -> u32 {
+        self.height
+    }
 
     pub(crate) fn size(&self) -> (u32, u32) {
         (self.width, self.height)
@@ -122,7 +129,12 @@ impl ImageBuffer {
     }
 
     /// Convert ImageData into Piet draw instructions
-    pub(crate) fn to_piet(&self, offset_matrix: Affine, ctx: &mut PaintCtx, interpolation: InterpolationMode) {
+    pub(crate) fn to_piet(
+        &self,
+        offset_matrix: Affine,
+        ctx: &mut PaintCtx,
+        interpolation: InterpolationMode,
+    ) {
         ctx.with_save(|ctx| {
             let size = self.get_size();
             // Background around the image
@@ -158,13 +170,13 @@ pub fn merge_channels(r: &[u8], g: &[u8], b: &[u8], a: &[u8], rgba: &mut [u8]) {
 
         let mut out_idx = 0;
         for i in (0..r.len()).step_by(32) {
-            let vr = x86::_mm256_loadu_si256(r[i..].as_ptr().cast());  // r0 r1 r2 r3 ...
-            let vg = x86::_mm256_loadu_si256(g[i..].as_ptr().cast());  // g0 g1 g2 g3 ...
-            let vb = x86::_mm256_loadu_si256(b[i..].as_ptr().cast());  // b0 b1 b2 b3 ...
-            let va = x86::_mm256_loadu_si256(a[i..].as_ptr().cast());  // a0 a1 a2 a3
+            let vr = x86::_mm256_loadu_si256(r[i..].as_ptr().cast()); // r0 r1 r2 r3 ...
+            let vg = x86::_mm256_loadu_si256(g[i..].as_ptr().cast()); // g0 g1 g2 g3 ...
+            let vb = x86::_mm256_loadu_si256(b[i..].as_ptr().cast()); // b0 b1 b2 b3 ...
+            let va = x86::_mm256_loadu_si256(a[i..].as_ptr().cast()); // a0 a1 a2 a3
 
-            let vrg_lo = x86::_mm256_unpacklo_epi8(vr, vg);               // r0 g0 r1 r1 r2 r2 ...
-            let vba_lo = x86::_mm256_unpacklo_epi8(vb, va);               // b0 a0 b1 a1 b2 a2 ...
+            let vrg_lo = x86::_mm256_unpacklo_epi8(vr, vg); // r0 g0 r1 r1 r2 r2 ...
+            let vba_lo = x86::_mm256_unpacklo_epi8(vb, va); // b0 a0 b1 a1 b2 a2 ...
             let vrgba_lo_lo = x86::_mm256_unpacklo_epi16(vrg_lo, vba_lo); // r0 g0 b0 a0 r1 g1 ...
             let vrgba_lo_hi = x86::_mm256_unpackhi_epi16(vrg_lo, vba_lo); //
 
@@ -202,7 +214,7 @@ pub fn merge_channels(r: &[u8], g: &[u8], b: &[u8], a: &[u8], rgba: &mut [u8]) {
     }
 
     if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("avx") {
-        unsafe { merge_avx2(r, g, b, a, rgba); }
+        unsafe { merge_avx2(r, g, b, a, rgba) };
     } else {
         merge_scalar(r, g, b, a, rgba);
     }
