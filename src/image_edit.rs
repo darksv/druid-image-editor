@@ -86,7 +86,7 @@ impl Widget<AppData> for ImageEditor {
                     self.get_tool(data).as_mut().mouse_move(pos, prev_pos, transform, data);
                 }
 
-                ctx.set_cursor(&Cursor::OpenHand);
+                ctx.set_cursor(&Cursor::Arrow);
                 ctx.set_handled();
                 ctx.request_paint();
             }

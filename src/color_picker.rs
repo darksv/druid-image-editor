@@ -3,9 +3,9 @@ use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, Li
 use druid::widget::{Padding, Slider};
 
 pub(crate) struct ColorPicker {
-    red: WidgetPod<f64, Padding<f64>>,
-    green: WidgetPod<f64, Padding<f64>>,
-    blue: WidgetPod<f64, Padding<f64>>,
+    red: WidgetPod<f64, Padding<f64, Slider>>,
+    green: WidgetPod<f64, Padding<f64, Slider>>,
+    blue: WidgetPod<f64, Padding<f64, Slider>>,
 }
 
 impl ColorPicker {

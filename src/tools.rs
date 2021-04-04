@@ -167,7 +167,8 @@ impl Tool for ShapeSelectionTool {
         ctx.with_save(|ctx| {
             let c = Color::rgb8(0, 0, 0);
             let mut ss = StrokeStyle::new();
-            ss.set_dash(vec![3.0, 1.0], 0.0);
+            ss.set_dash_pattern(vec![3.0, 1.0]);
+            ss.set_dash_offset(0.0);
 
             ctx.stroke_styled(
                 Rect::from_points(self.start_moving_pos.unwrap(), self.end_moving_pos.unwrap()),

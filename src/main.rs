@@ -49,7 +49,7 @@ fn main() {
     };
 
     AppLauncher::with_window(main_window)
-        .use_simple_logger()
+        .log_to_console()
         .launch(data)
         .expect("launch failed");
 }
