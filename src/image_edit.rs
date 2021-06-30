@@ -41,7 +41,7 @@ impl ImageEditor {
         }
     }
 
-    fn get_tool(&mut self, data: &AppData) -> ToolRef {
+    fn tool_mut(&mut self, data: &AppData) -> ToolRef {
         match self.state {
             EditorState::Drawing => ToolRef::Owned(Box::new(DrawTool::new(
                 data.brush_size.round() as u32,
@@ -66,10 +66,8 @@ impl ImageEditor {
 
         Viewport {
             content_size,
-            rect: Rect::from_origin_size(
-                (-self.moving_tool.offset_x, -self.moving_tool.offset_y),
-                size,
-            ),
+            view_origin: Point::new(-self.moving_tool.offset_x, -self.moving_tool.offset_y),
+            view_size: size,
         }
     }
 }
@@ -79,8 +77,8 @@ impl Widget<AppData> for ImageEditor {
         let mut port = self.viewport(data, ctx.size());
         self.scroll_component.event(&mut port, ctx, event, env);
         if ctx.is_handled() {
-            self.moving_tool.offset_x = -port.rect.origin().x;
-            self.moving_tool.offset_y = -port.rect.origin().y;
+            self.moving_tool.offset_x = -port.view_origin.x;
+            self.moving_tool.offset_y = -port.view_origin.y;
             return;
         }
 
@@ -95,7 +93,7 @@ impl Widget<AppData> for ImageEditor {
                     let transform = self.moving_tool.transform();
                     let pos = self.mouse_position;
                     let prev_pos = self.previous_mouse_position;
-                    self.get_tool(data)
+                    self.tool_mut(data)
                         .as_mut()
                         .mouse_move(pos, prev_pos, transform, data);
                 }
@@ -120,7 +118,7 @@ impl Widget<AppData> for ImageEditor {
 
                 let transform = self.moving_tool.transform();
                 let pos = self.mouse_position;
-                self.get_tool(data)
+                self.tool_mut(data)
                     .as_mut()
                     .mouse_down(pos, transform, data);
             }
@@ -128,7 +126,7 @@ impl Widget<AppData> for ImageEditor {
                 ctx.request_focus();
 
                 let transform = self.moving_tool.transform();
-                self.get_tool(data).as_mut().mouse_up(transform, data);
+                self.tool_mut(data).as_mut().mouse_up(transform, data);
 
                 self.state = EditorState::Drawing;
                 self.is_mouse_down = false;
@@ -186,7 +184,7 @@ impl Widget<AppData> for ImageEditor {
 
         let pos = self.mouse_position;
         let scale = self.moving_tool.scale();
-        self.get_tool(data).as_mut().overlay(ctx, pos, scale);
+        self.tool_mut(data).as_mut().overlay(ctx, pos, scale);
 
         self.scroll_component
             .draw_bars(ctx, &self.viewport(data, ctx.size()), env);

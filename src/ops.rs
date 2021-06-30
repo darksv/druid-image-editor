@@ -1,4 +1,5 @@
-#[allow(unused)]
+﻿#[allow(unused)]
+#[rustfmt::skip]
 fn gaussian(bytes: &[u8], width: usize, height: usize, out: &mut [u8]) {
     for y in 0..height {
         for x in 1..width - 1 {
@@ -8,7 +9,6 @@ fn gaussian(bytes: &[u8], width: usize, height: usize, out: &mut [u8]) {
         }
     }
 
-    #[rustfmt::skip]
     unsafe {
         for y in 1..height - 1 {
             for x in 0..width {

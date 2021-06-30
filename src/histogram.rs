@@ -35,12 +35,11 @@ impl Widget<AppData> for Histogram {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppData, _env: &Env) {
+        #[rustfmt::skip]
         fn make_image_data(image: &ImageBuffer, width: usize, height: usize) -> Vec<u8> {
             let mut normalized = [[0u8; 256]; 3];
 
-            for channel in
-                std::array::IntoIter::new([ChannelKind::Red, ChannelKind::Green, ChannelKind::Blue])
-            {
+            for channel in [ChannelKind::Red, ChannelKind::Green, ChannelKind::Blue] {
                 let mut histogram = [0u32; 256];
                 for value in image.channel(channel).as_slice().unwrap().iter().copied() {
                     histogram[value as usize] += 1;
@@ -56,7 +55,6 @@ impl Widget<AppData> for Histogram {
 
             let mut result = vec![0; width * height * 4];
             for y in 0..height {
-                #[rustfmt::skip]
                 for x in 0..width {
                     let ix = (y * width + x) * 4;
                     result[ix + 0] = if (255 - normalized[0][x]) / 2 > y as u8 { 0 } else { 255 };
@@ -68,7 +66,6 @@ impl Widget<AppData> for Histogram {
             result
         }
 
-        // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data =
             make_image_data(data.layers[0].borrow().data.as_buffer().unwrap(), 256, 128);
         let image = ctx
