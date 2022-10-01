@@ -30,7 +30,7 @@ fn make_channel_item() -> impl Widget<Channel> {
         )
         .with_flex_child(
             Checkbox::new(LabelText::from("")).lens(Channel::is_visible),
-            FlexParams::default(),
+            FlexParams::from(1.0),
         )
         .padding(5.0)
 }
@@ -58,7 +58,7 @@ fn make_layer_item() -> impl Widget<Layer> {
         )
         .with_flex_child(
             Checkbox::new(LabelText::from("")).lens(Layer::is_visible),
-            FlexParams::default(),
+            FlexParams::from(1.0),
         )
         .padding(5.0)
 }

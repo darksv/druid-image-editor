@@ -5,8 +5,8 @@ authors = ["darksv <darek969-12@o2.pl>"]
 edition = "2018"
 
 [dependencies]
-druid = { git = "https://github.com/linebender/druid.git", rev="f50695dfddbe2dbc9690230dceda5bf82b6ed80f", features = ["image"] }
-image = "0.23.14"
+druid = { git = "https://github.com/linebender/druid.git", rev="7c08b326578aa2b25057f5f1af09f9a6b1f51da4", features = ["image"] }
+image = "0.24.4"
 
 [profile.release]
 debug = true
