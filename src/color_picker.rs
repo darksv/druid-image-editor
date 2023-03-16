@@ -86,17 +86,13 @@ impl Widget<Color> for ColorPicker {
         let green_size = self.green.layout(ctx, &bc, &0.0, env);
         let blue_size = self.blue.layout(ctx, &bc, &0.0, env);
         self.red
-            .set_origin(ctx, &1.0, env, Point::new(0.0, rect_height));
+            .set_origin(ctx, Point::new(0.0, rect_height));
         self.green.set_origin(
             ctx,
-            &1.0,
-            env,
             Point::new(0.0, rect_height + red_size.height),
         );
         self.blue.set_origin(
             ctx,
-            &1.0,
-            env,
             Point::new(0.0, rect_height + red_size.height + green_size.height),
         );
         Size::new(
